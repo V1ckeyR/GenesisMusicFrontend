@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 import TrackCard from '@/components/TrackCard.vue'
 
@@ -142,6 +142,18 @@ const tracks = ref([
 ])
 const sortBy = ref(null);
 const searchBy = ref(null);
+const searchByRaw = ref(null)
+
+let debounceTimer = null;
+
+watch(searchByRaw, (value) => {
+    console.log('Got value', value);
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+       searchBy.value = value;
+       console.log('value set', value);
+    }, 200);
+})
 
 function onCreateClick() {
   console.log('Create button clicked');
@@ -155,7 +167,7 @@ const sortedTracks = computed(() => {
   if (searchBy.value) {
     const search = searchBy.value.trim().toLowerCase()
     result = result.filter((track) =>
-      ['title', 'artist'].some((key) =>
+      ['title', 'artist', 'album'].some((key) =>
         track[key]?.toLowerCase().includes(search)
       )
     )
@@ -177,41 +189,42 @@ const sortedTracks = computed(() => {
 
 <template>
     <el-container>
+        <el-header>
+            <div class="actions">
+                <el-button circle type="primary" @click="onCreateClick" icon="Plus"/>
+                
+                <el-select 
+                    v-model="sortBy"
+                    placeholder="Sort by"
+                    clearable
+                    class="input-field">
+                    <el-option label="Title" value="title" />
+                    <el-option label="Artist" value="artist" />
+                    <el-option label="Album" value="album" />
+                </el-select>
 
+                <el-input
+                    v-model="searchByRaw"
+                    placeholder="Search..."
+                    clearable
+                    prefix-icon="Search"
+                    class="input-field"
+                    style="max-width: 100%;"
+                />
+            </div>
+        </el-header>
+
+        <el-main>
+            <div class="tracks-page">
+                <TrackCard
+                    v-for="track in sortedTracks"
+                    :key="track.id"
+                    :track="track"
+                    class="mb-2"
+                />
+            </div>
+        </el-main>
     </el-container>
-    <el-header>
-        <div class="actions">
-            <el-button circle type="primary" @click="onCreateClick" icon="Plus"/>
-            
-            <el-select 
-                v-model="sortBy"
-                placeholder="Sort by"
-                clearable
-                class="input-field">
-                <el-option label="Title" value="title" />
-                <el-option label="Artist" value="artist" />
-            </el-select>
-
-            <el-input
-                v-model="searchBy"
-                placeholder="Search..."
-                clearable
-                prefix-icon="Search"
-                class="input-field"
-                style="max-width: 100%;"
-            />
-        </div>
-    </el-header>
-    <el-main>
-        <div class="tracks-page">
-            <TrackCard
-                v-for="track in sortedTracks"
-                :key="track.id"
-                :track="track"
-                class="mb-2"
-            />
-    </div>
-    </el-main>
 </template>
   
 <style>
@@ -224,6 +237,10 @@ const sortedTracks = computed(() => {
     .input-field {
         width: 240px;
         max-width: 240px;
+        margin: 0 1em;
+    }
+
+    .tracks-page {
         margin: 0 1em;
     }
 </style>
