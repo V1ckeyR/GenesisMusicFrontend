@@ -25,9 +25,12 @@
         </div>
 
         <!-- Hover buttons -->
-        <div class="track-actions" :class="{ visible: isHovered }" @click="onEdit">
-            <el-icon>
+        <div class="track-actions" :class="{ visible: isHovered }">
+            <el-icon @click="onEdit">
                 <Edit />
+            </el-icon>
+            <el-icon @click="onDelete">
+                <Delete />
             </el-icon>
         </div>
     </div>
@@ -45,6 +48,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
     (e: 'edit', payload: Track): void
+    (e: 'delete', payload: Track): void
 }>();
 
 
@@ -56,6 +60,10 @@ function onPlay() {
 
 function onEdit() {
     emit("edit", props.track)
+}
+
+function onDelete() {
+    emit("delete", props.track)
 }
 
 function formatDate(iso: string): string {

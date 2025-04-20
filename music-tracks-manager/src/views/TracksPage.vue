@@ -175,6 +175,10 @@ function onEditTrack(track: Track) {
     isModalVisible.value = true;
 }
 
+function onDeleteTrack(track: Track) {
+    console.log('Going to delete track', track.title);
+}
+
 function onSaveTrack(data: TrackFormPayload) {
     if (selectedTrack.value) {
         const idx = tracks.value.findIndex(t => t.id === selectedTrack.value!.id);
@@ -244,7 +248,7 @@ const sortedTracks = computed(() => {
         <el-container>
             <el-header>
                 <div class="actions">
-                    <el-button type="primary" @click="onCreateClick" icon="Plus">Create Track</el-button>
+                    <el-button type="primary" plain @click="onCreateClick" icon="Plus">Create Track</el-button>
 
                     <div class="sort-input">
                         <el-select v-model="sortBy" placeholder="Sort by" clearable class="input-field">
@@ -271,7 +275,8 @@ const sortedTracks = computed(() => {
                 <el-aside width="200px">Filters will be here</el-aside>
                 <el-main>
                     <div class="tracks-page">
-                        <TrackCard v-for="(track, index) in sortedTracks" :key="track.id" :track="track" :number="index + 1" class="mb-2" @edit="onEditTrack"/>
+                        <TrackCard v-for="(track, index) in sortedTracks" :key="track.id" :track="track"
+                            :number="index + 1" class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
                     </div>
 
                     <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
@@ -311,11 +316,11 @@ const sortedTracks = computed(() => {
 }
 
 .sort-order-button .el-icon {
-  transition: transform 0.3s ease;
+    transition: transform 0.3s ease;
 }
 
 .sort-order-button .rotated {
-  transform: rotate(180deg);
+    transform: rotate(180deg);
 }
 
 .search-input {
