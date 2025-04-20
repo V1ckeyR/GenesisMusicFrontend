@@ -210,8 +210,6 @@ function toggleSortOrder() {
 }
 
 // Computed
-const sortOrderIcon = computed(() => sortOrder.value === 'asc' ? ArrowUp : ArrowDown)
-
 const sortedTracks = computed(() => {
     let result = [...tracks.value]
 
@@ -257,30 +255,12 @@ const sortedTracks = computed(() => {
                         </el-select>
                         <el-button @click="toggleSortOrder" circle class="sort-order-button"
                             :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'">
-                            <el-icon>
-                                <component :is="sortOrderIcon" />
+                            <el-icon :class="{ rotated: sortOrder === 'desc' }">
+                                <ArrowUp />
                             </el-icon>
                         </el-button>
 
                     </div>
-
-                    <!-- <el-select v-model="sortOrder" placeholder="Order" :disabled="!sortBy" class="input-field">
-                        <el-option :value="'asc'">
-                            <template #default>
-                                <el-icon>
-                                    <ArrowUp />
-                                </el-icon> Ascending
-                            </template>
-</el-option>
-
-<el-option :value="'desc'">
-    <template #default>
-                                <el-icon>
-                                    <ArrowDown />
-                                </el-icon> Descending
-                            </template>
-</el-option>
-</el-select> -->
 
                     <el-input v-model="searchByRaw" placeholder="Search..." clearable prefix-icon="Search"
                         class="input-field search-input" />
@@ -328,6 +308,14 @@ const sortedTracks = computed(() => {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+}
+
+.sort-order-button .el-icon {
+  transition: transform 0.3s ease;
+}
+
+.sort-order-button .rotated {
+  transform: rotate(180deg);
 }
 
 .search-input {
