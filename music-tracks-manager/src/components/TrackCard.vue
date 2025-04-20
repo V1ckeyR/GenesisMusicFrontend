@@ -11,7 +11,7 @@
         <!-- Info -->
         <div class="track-info" @click="onPlay">
             <div class="track-title">{{ track.title }}</div>
-            <div class="track-artist">{{ track.artist }} · {{ track.title }}</div>
+            <div class="track-artist">{{ track.artist }} · {{ track.album || "single" }}</div>
         </div>
 
         <!-- Hover buttons -->
@@ -23,7 +23,7 @@
     </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref } from 'vue'
 
 const props = defineProps({

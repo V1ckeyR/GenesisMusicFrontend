@@ -1,49 +1,134 @@
-<script>
-defineProps({
-    track: Object,
-    visible: Boolean
-})
+<script setup lang="ts">
+import { reactive, computed, ref, watch } from 'vue'
+import type { FormInstance, FormRules } from 'element-plus'
+import type { Track, TrackFormPayload } from '@/types/Track'
 
-const emit = defineEmits(['save', 'close']);
 
-const form = reactive({ id: null, title: '', artist: '', url: '' });
+const props = defineProps<{
+    track: Track | null
+    visible: boolean
+}>()
 
-watchEffect(() => {
-    if (props.track) {
-        Object.assign(form, props.track);
-    } else {
-        form.id = null; form.title = ''; form.artist = ''; form.url = '';
-    }
-})
+const emit = defineEmits<{
+    (e: 'save', payload: TrackFormPayload): void
+    (e: 'close'): void
+}>()
 
-const dialogTitle = computed(() => props.track ? 'Edit Track' : 'New Track')
+const formRef = ref<FormInstance>()
+const defaultForm: TrackFormPayload = {
+    title: '',
+    artist: '',
+    album: '',
+    genres: [],
+    coverImage: '',
+    slug: ''
+}
+
+const form = reactive<TrackFormPayload>({ ...defaultForm });
+
+
+const availableGenres = ref<string[]>(['Pop', 'Rock', 'Jazz', 'Hip-hop'])  // mock
+
+watch(
+    () => props.track,
+    (track) => {
+        if (track) {
+            Object.assign(form, {
+                title: track.title,
+                artist: track.artist,
+                album: track.album,
+                genres: [...track.genres],
+                coverImage: track.coverImage,
+                slug: track.slug
+            })
+        } else {
+            resetForm()
+        }
+    },
+    { immediate: true }
+)
+
+const dialogTitle = computed(() => (props.track ? 'Edit Track' : 'New Track'))
+
+function resetForm() {
+    Object.assign(form, { ...defaultForm })
+}
 
 function onClose() {
-    emit('close');
+    emit('close')
 }
 
 function submitForm() {
-    emit('save', { ...form });
+    formRef.value?.validate((valid) => {
+        if (valid) {
+            const payload: TrackFormPayload = { ...form }
+            emit('save', payload)
+        }
+    })
 }
 
+const rules: FormRules = {
+    title: [{ required: true, message: 'Enter title', trigger: 'blur' }],
+    artist: [{ required: true, message: 'Enter artist', trigger: 'blur' }],
+    album: [{ required: false, message: 'Enter album', trigger: 'blur' }],
+    genres: [
+        {
+            type: 'array',
+            required: true,
+            message: 'Select at least one genre',
+            trigger: 'change'
+        }
+    ],
+    coverImage: [{ required: false, message: 'Enter cover image URL', trigger: 'blur' }]
+}
 </script>
-
 <template>
-    <el-dialog v-model="visible" :title="dialogTitle" @close="onClose">
-        <el-form :model="form">
-            <el-form-item label="Title">
+    <el-dialog :model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose">
+        <h1>{{ dialogTitle }}</h1>
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+            <el-form-item label="Title" prop="title">
                 <el-input v-model="form.title" autocomplete="off" />
             </el-form-item>
-            <el-form-item label="Artist">
+
+            <el-form-item label="Artist" prop="artist">
                 <el-input v-model="form.artist" autocomplete="off" />
             </el-form-item>
-            <el-form-item label="Audio URL">
-                <el-input v-model="form.url" placeholder="http://...mp3" />
+
+            <el-form-item label="Album" prop="album">
+                <el-input v-model="form.album" autocomplete="off" />
             </el-form-item>
+
+            <el-form-item label="Genres" prop="genres">
+                <!-- <el-select v-model="form.genres" multiple filterable allow-create default-first-option
+                    placeholder="Select or type genres">
+                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
+                </el-select> -->
+                <el-input-tag v-model="availableGenres" tag-type="primary" tag-effect="dark" placeholder="Select genres">
+                    <template #tag="{ value }">
+                        <div class="flex items-center">
+                            <el-icon class="mr-1">
+                                <ElementPlus />
+                            </el-icon>
+                            <span>{{ value }}</span>
+                        </div>
+                    </template>
+                </el-input-tag>
+            </el-form-item>
+
+
+            <el-form-item label="Slug" prop="slug">
+                <el-input v-model="form.slug" autocomplete="off" />
+            </el-form-item>
+
+            <el-form-item label="Cover Image" prop="coverImage">
+                <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg" />
+            </el-form-item>
+
+            <template #footer>
+                <el-button @click="resetForm">Reset</el-button>
+                <el-button @click="onClose">Cancel</el-button>
+                <el-button type="primary" @click="submitForm">Save</el-button>
+            </template>
         </el-form>
-        <template #footer>
-            <el-button @click="onClose">Cancel</el-button>
-            <el-button type="primary" @click="submitForm">Save</el-button>
-        </template>
     </el-dialog>
 </template>
