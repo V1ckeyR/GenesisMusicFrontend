@@ -1,8 +1,16 @@
 <template>
     <div class="track-card" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
+        <!-- Number -->
+        <div class="track-number-wrapper">
+            <span class="track-number">{{ number }}</span>
+        </div>
+
         <!-- Cover -->
         <div class="cover" @click="onPlay">
-            <img :src="track.coverImage" alt="cover" />
+            <img v-if="track.coverImage" :src="track.coverImage" alt="cover" @error="onImageError" />
+            <el-icon v-else :size="56">
+                <Picture />
+            </el-icon>
             <el-icon v-if="isHovered" class="play-icon">
                 <VideoPlay />
             </el-icon>
@@ -11,13 +19,15 @@
         <!-- Info -->
         <div class="track-info" @click="onPlay">
             <div class="track-title">{{ track.title }}</div>
-            <div class="track-artist">{{ track.artist }} · {{ track.album || "single" }}</div>
+            <div class="track-artist">{{ track.artist }} · {{ track.album || "single" }} | created at {{
+                formatDate(track.createdAt) }} | updated at {{ formatDate(track.updatedAt) }}</div>
+            <div class="track-actions track-artist" :class="{ visible: isHovered }">{{ track.slug }}...</div>
         </div>
 
         <!-- Hover buttons -->
-        <div class="track-actions" :class="{ visible: isHovered }">
+        <div class="track-actions" :class="{ visible: isHovered }" @click="onEdit">
             <el-icon>
-                <MoreFilled />
+                <Edit />
             </el-icon>
         </div>
     </div>
@@ -25,19 +35,40 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { Track } from '@/types/Track'
+import { Edit } from '@element-plus/icons-vue';
 
-const props = defineProps({
-    track: {
-        type: Object,
-        required: true
-    }
-})
+const props = defineProps<{
+    track: Track,
+    number: number
+}>()
 
-const isHovered = ref(false)
+const emit = defineEmits<{
+    (e: 'edit', payload: Track): void
+}>();
 
-const onPlay = () => {
+
+const isHovered = ref<Boolean>(false)
+
+function onPlay() {
     console.log('Play', props.track.title)
 }
+
+function onEdit() {
+    emit("edit", props.track)
+}
+
+function formatDate(iso: string): string {
+    return new Intl.DateTimeFormat('uk-UA', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+    }).format(new Date(iso))
+}
+
+function onImageError(event: Event) {
+    (event.target as HTMLImageElement).src = 'https://element-plus.org/images/element-plus-logo.svg'
+}
+
 </script>
 
 <style scoped>
@@ -52,9 +83,27 @@ const onPlay = () => {
 }
 
 .track-card:hover>.cover img {
-    /* background-color: #00000056; */
     filter: brightness(25%)
 }
+
+.track-number {
+    font-weight: bold;
+    color: #aaa;
+}
+
+.track-number-wrapper {
+    width: 1.5em;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    font-weight: bold;
+    color: #bbb;
+    margin-right: 0.75rem;
+}
+
 
 .cover {
     position: relative;

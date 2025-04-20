@@ -3,16 +3,16 @@ import { reactive, computed, ref, watch } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Track, TrackFormPayload } from '@/types/Track'
 
+const visible = defineModel<boolean>('visible');
 
 const props = defineProps<{
     track: Track | null
-    visible: boolean
-}>()
+}>();
 
 const emit = defineEmits<{
     (e: 'save', payload: TrackFormPayload): void
     (e: 'close'): void
-}>()
+}>();
 
 const formRef = ref<FormInstance>()
 const defaultForm: TrackFormPayload = {
@@ -27,7 +27,7 @@ const defaultForm: TrackFormPayload = {
 const form = reactive<TrackFormPayload>({ ...defaultForm });
 
 
-const availableGenres = ref<string[]>(['Pop', 'Rock', 'Jazz', 'Hip-hop'])  // mock
+const availableGenres = ref<string[]>(['Pop', 'Rock', 'Jazz', 'Hip-hop']);  // mock
 
 watch(
     () => props.track,
@@ -48,21 +48,22 @@ watch(
     { immediate: true }
 )
 
-const dialogTitle = computed(() => (props.track ? 'Edit Track' : 'New Track'))
+const dialogTitle = computed(() => (props.track ? 'Edit Track' : 'New Track'));
 
 function resetForm() {
-    Object.assign(form, { ...defaultForm })
+    Object.assign(form, { ...defaultForm });
 }
 
 function onClose() {
-    emit('close')
+    resetForm();
+    emit('close');
 }
 
 function submitForm() {
     formRef.value?.validate((valid) => {
         if (valid) {
-            const payload: TrackFormPayload = { ...form }
-            emit('save', payload)
+            const payload: TrackFormPayload = { ...form };
+            emit('save', payload);
         }
     })
 }
@@ -83,8 +84,7 @@ const rules: FormRules = {
 }
 </script>
 <template>
-    <el-dialog :model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose">
-        <h1>{{ dialogTitle }}</h1>
+    <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
             <el-form-item label="Title" prop="title">
                 <el-input v-model="form.title" autocomplete="off" />
@@ -99,22 +99,11 @@ const rules: FormRules = {
             </el-form-item>
 
             <el-form-item label="Genres" prop="genres">
-                <!-- <el-select v-model="form.genres" multiple filterable allow-create default-first-option
-                    placeholder="Select or type genres">
-                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
-                </el-select> -->
-                <el-input-tag v-model="availableGenres" tag-type="primary" tag-effect="dark" placeholder="Select genres">
-                    <template #tag="{ value }">
-                        <div class="flex items-center">
-                            <el-icon class="mr-1">
-                                <ElementPlus />
-                            </el-icon>
-                            <span>{{ value }}</span>
-                        </div>
-                    </template>
-                </el-input-tag>
+                <el-select v-model="form.genres" multiple filterable allow-create default-first-option
+                    placeholder="Select or type genres" style="width: 100%">
+                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre"/>
+                </el-select>
             </el-form-item>
-
 
             <el-form-item label="Slug" prop="slug">
                 <el-input v-model="form.slug" autocomplete="off" />
@@ -123,12 +112,22 @@ const rules: FormRules = {
             <el-form-item label="Cover Image" prop="coverImage">
                 <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg" />
             </el-form-item>
-
-            <template #footer>
-                <el-button @click="resetForm">Reset</el-button>
-                <el-button @click="onClose">Cancel</el-button>
-                <el-button type="primary" @click="submitForm">Save</el-button>
-            </template>
         </el-form>
+        <template #footer>
+            <el-button @click="resetForm">Reset</el-button>
+            <el-button @click="onClose">Cancel</el-button>
+            <el-button type="primary" @click="submitForm">Save</el-button>
+        </template>
     </el-dialog>
 </template>
+
+<style>
+.el-tag {
+    color: white;
+    background-color: #409EFF;
+}
+
+svg {
+    color: white;
+}
+</style>

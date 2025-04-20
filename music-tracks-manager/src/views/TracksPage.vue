@@ -271,7 +271,7 @@ const sortedTracks = computed(() => {
                 <el-aside width="200px">Filters will be here</el-aside>
                 <el-main>
                     <div class="tracks-page">
-                        <TrackCard v-for="track in sortedTracks" :key="track.id" :track="track" class="mb-2" />
+                        <TrackCard v-for="(track, index) in sortedTracks" :key="track.id" :track="track" :number="index + 1" class="mb-2" @edit="onEditTrack"/>
                     </div>
 
                     <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
