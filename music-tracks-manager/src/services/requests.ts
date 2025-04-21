@@ -1,6 +1,6 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 
-import type { TrackFormPayload } from '@/types/Track'
+import type { Track, TrackFormPayload, TrackListResponse } from '@/types/Track'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -17,8 +17,9 @@ async function request<T>(cb: () => Promise<{ data: T }>): Promise<T> {
         const { data } = await cb();
         return data
     } catch (error) {
-        console.error('API error:', error);
-        throw error
+        const err = error as AxiosError;
+        console.error('API error:', err.response?.data || err.message);
+        throw err
     }
 }
 
@@ -37,7 +38,7 @@ export async function fetchTracks(params: {
     artist?: string
 }) {
     // Get all tracks with pagination, sorting, and filtering
-    return request(() => api.get('/tracks', { params }))
+    return request(() => api.get<TrackListResponse>('/tracks', { params }))
 }
 
 export async function fetchTrackBySlug(slug: string) {
@@ -47,12 +48,12 @@ export async function fetchTrackBySlug(slug: string) {
 
 export async function createTrack(payload: TrackFormPayload) {
     // Create a new track
-    return request(() => api.post('/tracks', payload))
+    return request(() => api.post<Track>('/tracks', payload))
 }
 
 export async function updateTrack(id: string, payload: TrackFormPayload) {
     // Update a track
-    return request(() => api.put(`/tracks/${id}`, payload))
+    return request(() => api.put<Track>(`/tracks/${id}`, payload))
 }
 
 export async function deleteTrack(id: string) {

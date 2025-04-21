@@ -1,53 +1,40 @@
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import axios from 'axios'
+import { ref, onMounted } from 'vue'
 
 import TrackCard from '@/components/TrackCard.vue'
 import TrackModal from '@/components/TrackModal.vue'
 import { ArrowUp } from '@element-plus/icons-vue'
 
 import type { Track, TrackFormPayload } from '@/types/Track'
-import { fetchTracks } from '@/services/requests'
+import { useTracks } from '@/composables/useTracks'
 
-// Sort Types
-type SortField = 'title' | 'artist' | 'album' | 'createdAt' | null;
-type SortOrder = 'asc' | 'desc';
+const {
+    // States
+    isLoading,
+
+    tracks,
+
+    total,
+    page,
+    limit,
+    totalPages,
+
+    sortBy,
+    sortOrder,
+    searchByRaw,
+    searchBy,
+
+    // Functions
+    loadTracks,
+    saveTrack
+} = useTracks()
+
+onMounted(() => loadTracks());
 
 // States
-const loading = ref(false)
-const tracks = ref<Track[]>([]);
-const sortBy = ref<SortField>(null);
-const sortOrder = ref<SortOrder>('asc');
-const searchByRaw = ref('');
-const searchBy = ref('');
 const selectedTrack = ref<Track | null>(null);
 const isModalVisible = ref(false);
 
-
-// Initial requests
-onMounted(async () => {
-    loading.value = true
-    // TODO: loading skelet
-    try {
-        const response = await fetchTracks({"page": 1, "limit": 10})
-        tracks.value = response.data
-    } catch (error) {
-        console.error('Failed to load tracks:', error)
-        // TODO: show error
-    } finally {
-        loading.value = false
-    }
-})
-
-// Debounce
-let debounceTimer: number | null = null;
-
-watch(searchByRaw, (value) => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = window.setTimeout(() => {
-        searchBy.value = value.trim().toLowerCase();
-    }, 200);
-})
 
 // Functions
 function onCreateClick() {
@@ -65,28 +52,7 @@ function onDeleteTrack(track: Track) {
 }
 
 function onSaveTrack(data: TrackFormPayload) {
-    if (selectedTrack.value) {
-        const idx = tracks.value.findIndex(t => t.id === selectedTrack.value!.id);
-        if (idx !== -1) {
-            // If id is present - set new data. PUT /api/tracks/{id}
-            tracks.value[idx] = { ...tracks.value[idx], ...data };  // mock
-
-            isModalVisible.value = false;
-            return;
-        }
-    }
-
-    // else POST /api/tracks, /api/tracks/{id}/upload
-    const newTrack: Track = {
-        ...data,
-        id: Date.now().toString(),
-        audioFile: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    }
-
-    tracks.value.push(newTrack);  // mock
-
+    saveTrack(data, selectedTrack.value!.id);
     isModalVisible.value = false;
 }
 
@@ -97,34 +63,6 @@ function onCloseModal() {
 function toggleSortOrder() {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
 }
-
-// Computed
-const sortedTracks = computed(() => {
-    let result = [...tracks.value]
-
-    // Step 1: Filter by search query
-    if (searchBy.value) {
-        result = result.filter((track) => {
-            const byTitle = track.title.toLowerCase().includes(searchBy.value);
-            const byArtist = track.artist.toLowerCase().includes(searchBy.value);
-            const byAlbum = track.album?.toLowerCase().includes(searchBy.value);
-            return byTitle || byArtist || byAlbum
-        })
-    }
-
-    // Step 2: Sort by selected field
-    if (sortBy.value) {
-        result.sort((a, b) => {
-            const aVal = a[sortBy.value!];
-            const bVal = b[sortBy.value!];
-
-            const compare = String(aVal).localeCompare(String(bVal));
-            return sortOrder.value === 'asc' ? compare : -compare;
-        })
-    }
-
-    return result
-})
 
 </script>
 
@@ -160,12 +98,15 @@ const sortedTracks = computed(() => {
                 <el-aside width="200px">Filters will be here</el-aside>
                 <el-main>
                     <div class="tracks-page">
-                        <TrackCard v-for="(track, index) in sortedTracks" :key="track.id" :track="track"
-                            :number="index + 1" class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
+                        <TrackCard v-for="(track, index) in tracks" :key="track.id" :track="track" :number="index + 1"
+                            class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
                     </div>
 
                     <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
                         @close="onCloseModal" />
+                    <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10, 20, 50]"
+                        layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
+                        :hide-on-single-page="true" />
                 </el-main>
             </el-container>
         </el-container>

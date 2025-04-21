@@ -1,7 +1,15 @@
 <script setup lang="ts">
-import { reactive, computed, ref, watch } from 'vue'
+import { reactive, computed, ref, watch, onMounted, nextTick } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Track, TrackFormPayload } from '@/types/Track'
+import { useGenres } from '@/composables/useGenres';
+
+const {
+    isLoading,
+    availableGenres,
+
+    loadGenres
+} = useGenres();
 
 const visible = defineModel<boolean>('visible');
 
@@ -26,9 +34,6 @@ const defaultForm: TrackFormPayload = {
 
 const form = reactive<TrackFormPayload>({ ...defaultForm });
 
-
-const availableGenres = ref<string[]>(['Pop', 'Rock', 'Jazz', 'Hip-hop']);  // mock
-
 watch(
     () => props.track,
     (track) => {
@@ -50,8 +55,15 @@ watch(
 
 const dialogTitle = computed(() => (props.track ? 'Edit Track' : 'New Track'));
 
+onMounted(() => {
+    loadGenres();
+});
+
 function resetForm() {
     Object.assign(form, { ...defaultForm });
+    nextTick(() => {
+        formRef.value?.clearValidate()
+    })
 }
 
 function onClose() {
@@ -101,7 +113,7 @@ const rules: FormRules = {
             <el-form-item label="Genres" prop="genres">
                 <el-select v-model="form.genres" multiple filterable allow-create default-first-option
                     placeholder="Select or type genres" style="width: 100%">
-                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre"/>
+                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
                 </el-select>
             </el-form-item>
 
@@ -114,8 +126,8 @@ const rules: FormRules = {
             </el-form-item>
         </el-form>
         <template #footer>
-            <el-button @click="resetForm">Reset</el-button>
             <el-button @click="onClose">Cancel</el-button>
+            <el-button @click="resetForm">Reset</el-button>
             <el-button type="primary" @click="submitForm">Save</el-button>
         </template>
     </el-dialog>
