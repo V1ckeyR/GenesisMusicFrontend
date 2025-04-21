@@ -1,5 +1,5 @@
 import { ref, watch, computed, onMounted } from 'vue'
-import { fetchTracks, createTrack, updateTrack } from '@/services/requests'
+import { fetchTracks, createTrack, updateTrack, deleteTrack } from '@/services/requests'
 import type { Track, TrackFormPayload } from '@/types/Track'
 import type { SortField, SortOrder } from '@/types/Sort'
 import { ElMessage } from 'element-plus'
@@ -96,6 +96,19 @@ export function useTracks() {
         }
     }
 
+    async function removeTrack(track: Track) {
+        isLoading.value = true
+        try {
+            await deleteTrack(track.id);
+            ElMessage.success(`Track "${track.title}" was deleted`)
+            await loadTracks()
+        } catch (err) {
+            ElMessage.error(`Failed to delete track`)
+        } finally {
+            isLoading.value = false
+        }
+    }
+
 
     return {
         // States
@@ -120,6 +133,7 @@ export function useTracks() {
         // Functions
         loadTracks,
         saveTrack,
+        removeTrack,
         resetFilters
     }
 }

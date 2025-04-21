@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios'
 
-import type { Track, TrackFormPayload, TrackListResponse } from '@/types/Track'
+import type { Track, TrackBulkDeleteResponse, TrackFormPayload, TrackListResponse } from '@/types/Track'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
@@ -43,7 +43,7 @@ export async function fetchTracks(params: {
 
 export async function fetchTrackBySlug(slug: string) {
     // Get a track by slug
-    return request(() => api.get(`/tracks/${slug}`))
+    return request(() => api.get<Track>(`/tracks/${slug}`))
 }
 
 export async function createTrack(payload: TrackFormPayload) {
@@ -58,12 +58,12 @@ export async function updateTrack(id: string, payload: TrackFormPayload) {
 
 export async function deleteTrack(id: string) {
     // Delete a track
-    return request(() => api.delete(`/tracks/${id}`))
+    return request(() => api.delete<Track>(`/tracks/${id}`))
 }
 
 export async function deleteTrackBulk(ids: string[]) {
     // Delete multiple tracks
-    return request(() => api.post('/tracks/delete', { ids }))
+    return request(() => api.post<TrackBulkDeleteResponse>('/tracks/delete', { ids }))
 }
 
 export async function uploadTrackAudiofile(id: string, file: File) {
@@ -72,7 +72,7 @@ export async function uploadTrackAudiofile(id: string, file: File) {
     formData.append('file', file);
 
     return request(() =>
-        api.post(`/tracks/${id}/upload`, formData, {
+        api.post<Track>(`/tracks/${id}/upload`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' }
         })
     )
@@ -80,5 +80,5 @@ export async function uploadTrackAudiofile(id: string, file: File) {
 
 export async function deleteTrackAudiofile(id: string) {
     // Delete an audio file from a track
-    return request(() => api.delete(`/tracks/${id}/file`));
+    return request(() => api.delete<Track>(`/tracks/${id}/file`));
 }

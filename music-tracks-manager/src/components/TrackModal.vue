@@ -22,6 +22,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'save', payload: TrackFormPayload): void
     (e: 'close'): void
+    (e: 'delete', track: Track): void
 }>();
 
 const formRef = ref<FormInstance>()
@@ -70,6 +71,11 @@ function resetForm() {
 function onClose() {
     resetForm();
     emit('close');
+}
+
+function onDelete() {
+    emit("delete", props.track!);
+    resetForm();    
 }
 
 function submitForm() {
@@ -154,6 +160,7 @@ const rules: FormRules = {
 
         </el-form>
         <template #footer>
+            <el-button v-if="props.track?.id" type="danger" @click="onDelete">Delete</el-button>
             <el-button @click="onClose">Cancel</el-button>
             <el-button @click="resetForm">Reset</el-button>
             <el-button type="primary" @click="submitForm">Save</el-button>

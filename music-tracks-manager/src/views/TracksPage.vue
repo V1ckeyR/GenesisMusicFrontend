@@ -9,6 +9,7 @@ import { ArrowUp, Filter, SortUp } from '@element-plus/icons-vue'
 import type { Track, TrackFormPayload } from '@/types/Track'
 import { useTracks } from '@/composables/useTracks'
 import { useGenreStore } from '@/stores/genreStore'
+import { deleteTrack } from '@/services/requests'
 
 const genreStore = useGenreStore();
 
@@ -33,6 +34,7 @@ const {
     // Functions
     loadTracks,
     saveTrack,
+    removeTrack,
     resetFilters
 } = useTracks()
 
@@ -62,11 +64,12 @@ function onEditTrack(track: Track) {
 }
 
 function onDeleteTrack(track: Track) {
-    console.log('Going to delete track', track.title);
+    removeTrack(track);
+    isModalVisible.value = false;
 }
 
 function onSaveTrack(data: TrackFormPayload) {
-    saveTrack(data, selectedTrack.value!.id);
+    saveTrack(data, selectedTrack.value?.id);
     isModalVisible.value = false;
 }
 
@@ -116,7 +119,7 @@ function toggleSortOrder() {
                 </span>
 
                 <el-button v-if="selectedArtist || selectedGenre" type="default" plain icon="Close" style="width: 100%"
-                    @click="resetFilters" v-loading="isLoading">
+                    @click="resetFilters" v-loading="isLoadingGenres">
                     Reset Filters
                 </el-button>
 
@@ -141,7 +144,7 @@ function toggleSortOrder() {
                 </div>
 
                 <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
-                    @close="onCloseModal" />
+                    @close="onCloseModal" @delete="onDeleteTrack" />
                 <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10]"
                     layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
                     :hide-on-single-page="true" />

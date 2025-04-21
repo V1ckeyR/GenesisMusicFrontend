@@ -23,3 +23,8 @@ export type TrackListResponse = {
     totalPages: number
   }
 }
+
+export type TrackBulkDeleteResponse = {
+  success: string[]
+  failed: string[]
+}
