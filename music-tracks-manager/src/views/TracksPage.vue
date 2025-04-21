@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 
 import TrackCard from '@/components/TrackCard.vue'
 import TrackModal from '@/components/TrackModal.vue'
+import TrackCardSkeleton from '@/components/TrackCardSkeleton.vue'
 import { ArrowUp } from '@element-plus/icons-vue'
 
 import type { Track, TrackFormPayload } from '@/types/Track'
@@ -97,7 +98,9 @@ function toggleSortOrder() {
             <el-container>
                 <el-aside width="200px">Filters will be here</el-aside>
                 <el-main>
-                    <div class="tracks-page">
+                    <TrackCardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" />
+
+                    <div v-else class="tracks-page">
                         <TrackCard v-for="(track, index) in tracks" :key="track.id" :track="track" :number="index + 1"
                             class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
                     </div>

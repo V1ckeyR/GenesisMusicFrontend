@@ -97,7 +97,7 @@ const rules: FormRules = {
 </script>
 <template>
     <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose">
-        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" v-loading="isLoading">
             <el-form-item label="Title" prop="title">
                 <el-input v-model.trim="form.title" autocomplete="off" />
             </el-form-item>
@@ -137,6 +137,10 @@ const rules: FormRules = {
 .el-tag {
     color: white;
     background-color: #409EFF;
+}
+
+.el-form {
+    padding-right: 2rem;
 }
 
 svg {

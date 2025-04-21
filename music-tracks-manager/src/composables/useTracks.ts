@@ -22,7 +22,6 @@ export function useTracks() {
     // Load on page/limit change
     async function loadTracks() {
         isLoading.value = true
-        // TODO: loading skelet
         try {
             const response = await fetchTracks({
                 page: page.value,
