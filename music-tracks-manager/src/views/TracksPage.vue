@@ -1,168 +1,56 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 import TrackCard from '@/components/TrackCard.vue'
 import TrackModal from '@/components/TrackModal.vue'
-import type { Track, TrackFormPayload } from '@/types/Track'
-import { ArrowDown, ArrowUp } from '@element-plus/icons-vue';
+import TrackCardSkeleton from '@/components/TrackCardSkeleton.vue'
+import { ArrowUp, Filter, SortUp } from '@element-plus/icons-vue'
 
-// Sort Types
-type SortField = 'title' | 'artist' | 'album' | 'createdAt' | null;
-type SortOrder = 'asc' | 'desc';
+import type { Track, TrackFormPayload } from '@/types/Track'
+import { useTracks } from '@/composables/useTracks'
+import { useGenreStore } from '@/stores/genreStore'
+import { deleteTrack } from '@/services/requests'
+
+const genreStore = useGenreStore();
+
+const {
+    // States
+    isLoading,
+
+    tracks,
+
+    total,
+    page,
+    limit,
+
+    sortBy,
+    sortOrder,
+    searchByRaw,
+    selectedArtist,
+    selectedGenre,
+
+    uniqueArtists,
+
+    // Functions
+    loadTracks,
+    saveTrack,
+    removeTrack,
+    resetFilters
+} = useTracks()
+
+
+onMounted(() => {
+    loadTracks();
+    genreStore.loadGenres();
+});
 
 // States
-const tracks = ref<Track[]>([
-    {
-        "id": "1741096482745",
-        "title": "Bohemian Rhapsody",
-        "artist": "Justin Bieber",
-        "album": "SOS",
-        "genres": [
-            "Rock",
-            "Country"
-        ],
-        "slug": "bohemian-rhapsody",
-        "coverImage": "https://picsum.photos/seed/Bohemian%20Rhapsody/300/300",
-        "audioFile": "test.mp3",
-        "createdAt": "2025-03-04T13:54:42.745Z",
-        "updatedAt": "2025-04-08T11:40:49.284Z"
-    },
-    {
-        "id": "1741096482744",
-        "title": "Imagine",
-        "artist": "Post Malone",
-        "album": "Harry's House",
-        "genres": [
-            "Rock",
-            "Pop"
-        ],
-        "slug": "imagine",
-        "coverImage": "https://picsum.photos/seed/Imagine/300/300",
-        "createdAt": "2025-03-04T13:54:42.744Z",
-        "updatedAt": "2025-03-04T13:54:42.744Z"
-    },
-    {
-        "id": "1741096482743",
-        "title": "What'd I Say",
-        "artist": "Post Malone",
-        "album": "Justice",
-        "genres": [
-            "Hip Hop"
-        ],
-        "slug": "whatd-i-say",
-        "coverImage": "https://picsum.photos/seed/What'd%20I%20Say/300/300",
-        "createdAt": "2025-03-04T13:54:42.743Z",
-        "updatedAt": "2025-04-07T14:35:43.800Z"
-    },
-    {
-        "id": "1741096482742",
-        "title": "Johnny B. Goode",
-        "artist": "Lady Gaga",
-        "genres": [
-            "Pop",
-            "R&B",
-            "Rock"
-        ],
-        "slug": "johnny-b-goode",
-        "coverImage": "https://picsum.photos/seed/Johnny%20B.%20Goode/300/300",
-        "createdAt": "2025-03-04T13:54:42.742Z",
-        "updatedAt": "2025-03-04T13:54:42.742Z"
-    },
-    {
-        "id": "1741096482741",
-        "title": "Like a Rolling Stone",
-        "artist": "Rihanna",
-        "genres": [
-            "Blues",
-            "R&B",
-            "Hip Hop"
-        ],
-        "slug": "like-a-rolling-stone",
-        "coverImage": "https://picsum.photos/seed/Like%20a%20Rolling%20Stone/300/300",
-        "createdAt": "2025-03-04T13:54:42.741Z",
-        "updatedAt": "2025-03-04T13:54:42.741Z"
-    },
-    {
-        "id": "1741096482740",
-        "title": "Love Story",
-        "artist": "Lady Gaga",
-        "album": "30",
-        "genres": [
-            "Indie"
-        ],
-        "slug": "love-story",
-        "coverImage": "https://picsum.photos/seed/Love%20Story/300/300",
-        "createdAt": "2025-03-04T13:54:42.740Z",
-        "updatedAt": "2025-03-04T13:54:42.740Z"
-    },
-    {
-        "id": "1741096482739",
-        "title": "Peaches",
-        "artist": "Drake",
-        "album": "DAMN.",
-        "genres": [
-            "Indie",
-            "R&B",
-            "Rock"
-        ],
-        "slug": "peaches",
-        "coverImage": "https://picsum.photos/seed/Peaches/300/300",
-        "createdAt": "2025-03-04T13:54:42.739Z",
-        "updatedAt": "2025-03-04T13:54:42.739Z"
-    },
-    {
-        "id": "1741096482738",
-        "title": "Smells Like Teen Spirit",
-        "artist": "Beyoncé",
-        "genres": [
-            "Indie"
-        ],
-        "slug": "smells-like-teen-spirit",
-        "coverImage": "https://picsum.photos/seed/Smells%20Like%20Teen%20Spirit/300/300",
-        "createdAt": "2025-03-04T13:54:42.738Z",
-        "updatedAt": "2025-03-04T13:54:42.738Z"
-    },
-    {
-        "id": "1741096482737",
-        "title": "As It Was",
-        "artist": "Harry Styles",
-        "genres": [
-            "Rock",
-            "Blues"
-        ],
-        "slug": "as-it-was",
-        "coverImage": "https://picsum.photos/seed/As%20It%20Was/300/300",
-        "createdAt": "2025-03-04T13:54:42.737Z",
-        "updatedAt": "2025-03-04T13:54:42.737Z"
-    },
-    {
-        "id": "1741094505682",
-        "title": "Pagination Test Track 4",
-        "artist": "Pagination Artist",
-        "genres": [
-            "Electronic"
-        ],
-        "slug": "pagination-test-track-4",
-        "createdAt": "2025-03-04T13:21:45.682Z",
-        "updatedAt": "2025-03-04T13:21:45.682Z"
-    }
-])  // mock
-const sortBy = ref<SortField>(null);
-const sortOrder = ref<SortOrder>('asc');
-const searchByRaw = ref('');
-const searchBy = ref('');
+const availableGenres = computed(() => genreStore.genres)
+const isLoadingGenres = computed(() => genreStore.isLoading)
+
 const selectedTrack = ref<Track | null>(null);
 const isModalVisible = ref(false);
 
-// Debounce
-let debounceTimer: number | null = null;
-
-watch(searchByRaw, (value) => {
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = window.setTimeout(() => {
-        searchBy.value = value.trim().toLowerCase();
-    }, 200);
-})
 
 // Functions
 function onCreateClick() {
@@ -176,32 +64,12 @@ function onEditTrack(track: Track) {
 }
 
 function onDeleteTrack(track: Track) {
-    console.log('Going to delete track', track.title);
+    removeTrack(track);
+    isModalVisible.value = false;
 }
 
 function onSaveTrack(data: TrackFormPayload) {
-    if (selectedTrack.value) {
-        const idx = tracks.value.findIndex(t => t.id === selectedTrack.value!.id);
-        if (idx !== -1) {
-            // If id is present - set new data. PUT /api/tracks/{id}
-            tracks.value[idx] = { ...tracks.value[idx], ...data };  // mock
-
-            isModalVisible.value = false;
-            return;
-        }
-    }
-
-    // else POST /api/tracks, /api/tracks/{id}/upload
-    const newTrack: Track = {
-        ...data,
-        id: Date.now().toString(),
-        audioFile: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-    }
-
-    tracks.value.push(newTrack);  // mock
-
+    saveTrack(data, selectedTrack.value?.id);
     isModalVisible.value = false;
 }
 
@@ -213,100 +81,85 @@ function toggleSortOrder() {
     sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
 }
 
-// Computed
-const sortedTracks = computed(() => {
-    let result = [...tracks.value]
-
-    // Step 1: Filter by search query
-    if (searchBy.value) {
-        result = result.filter((track) => {
-            const byTitle = track.title.toLowerCase().includes(searchBy.value);
-            const byArtist = track.artist.toLowerCase().includes(searchBy.value);
-            const byAlbum = track.album?.toLowerCase().includes(searchBy.value);
-            return byTitle || byArtist || byAlbum
-        })
-    }
-
-    // Step 2: Sort by selected field
-    if (sortBy.value) {
-        result.sort((a, b) => {
-            const aVal = a[sortBy.value!];
-            const bVal = b[sortBy.value!];
-
-            const compare = String(aVal).localeCompare(String(bVal));
-            return sortOrder.value === 'asc' ? compare : -compare;
-        })
-    }
-
-    return result
-})
-
 </script>
 
 <template>
     <div class="common-layout">
         <el-container>
-            <el-header>
-                <div class="actions">
-                    <el-button type="primary" plain @click="onCreateClick" icon="Plus">Create Track</el-button>
+            <el-aside width="200px" class="section">
+                <el-button type="primary" plain @click="onCreateClick" icon="Plus">Create Track</el-button>
 
-                    <div class="sort-input">
-                        <el-select v-model="sortBy" placeholder="Sort by" clearable class="input-field">
-                            <el-option label="Title" value="title" />
-                            <el-option label="Artist" value="artist" />
-                            <el-option label="Album" value="album" />
-                            <el-option label="Created At" value="createdAt" />
-                        </el-select>
-                        <el-button @click="toggleSortOrder" circle class="sort-order-button"
-                            :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'">
-                            <el-icon :class="{ rotated: sortOrder === 'desc' }">
-                                <ArrowUp />
-                            </el-icon>
-                        </el-button>
+                <el-divider />
 
-                    </div>
+                <span>Sort By <el-icon size="small">
+                        <Sort />
+                    </el-icon>
+                </span>
 
-                    <el-input v-model="searchByRaw" placeholder="Search..." clearable prefix-icon="Search"
-                        class="input-field search-input" />
+                <div class="sort-input">
+                    <el-select v-model="sortBy" placeholder="Sort by" clearable>
+                        <el-option label="Title" value="title" />
+                        <el-option label="Artist" value="artist" />
+                        <el-option label="Album" value="album" />
+                        <el-option label="Created At" value="createdAt" />
+                    </el-select>
+                    <el-button @click="toggleSortOrder" circle class="sort-order-button"
+                        :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'">
+                        <el-icon :class="{ rotated: sortOrder === 'desc' }" size="small">
+                            <SortUp />
+                        </el-icon>
+                    </el-button>
                 </div>
-            </el-header>
 
-            <el-container>
-                <el-aside width="200px">Filters will be here</el-aside>
-                <el-main>
-                    <div class="tracks-page">
-                        <TrackCard v-for="(track, index) in sortedTracks" :key="track.id" :track="track"
-                            :number="index + 1" class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
-                    </div>
+                <el-divider />
 
-                    <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
-                        @close="onCloseModal" />
-                </el-main>
-            </el-container>
+                <span>Filters <el-icon size="small">
+                        <Filter />
+                    </el-icon>
+                </span>
+
+                <el-button v-if="selectedArtist || selectedGenre" type="default" plain icon="Close" style="width: 100%"
+                    @click="resetFilters" v-loading="isLoadingGenres">
+                    Reset Filters
+                </el-button>
+
+                <el-select v-model="selectedArtist" clearable placeholder="Choose artist" style="width: 100%">
+                    <el-option v-for="artist in uniqueArtists" :key="artist" :label="artist" :value="artist" />
+                </el-select>
+
+                <el-select v-model="selectedGenre" clearable placeholder="Choose genre" style="width: 100%">
+                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
+                </el-select>
+            </el-aside>
+
+            <el-main class="section">
+                <el-input v-model="searchByRaw" placeholder="Search..." clearable prefix-icon="Search"
+                    class="search-input" />
+
+                <div class="tracks-page">
+                    <TrackCardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
+
+                    <TrackCard v-else v-for="(track, index) in tracks" :key="track.id" :track="track"
+                        :number="index + 1" class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
+                </div>
+
+                <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
+                    @close="onCloseModal" @delete="onDeleteTrack" />
+                <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10]"
+                    layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
+                    :hide-on-single-page="true" />
+            </el-main>
         </el-container>
     </div>
 </template>
 
 
 <style>
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-evenly;
-    gap: 1rem;
-}
-
-.el-header {
-    height: auto !important;
-    min-width: 80vw;
-    margin: 1rem 0;
-}
-
-.input-field {
-    width: 140px !important;
-    max-width: 240px;
-    flex: 0 0 auto;
-    /* margin: 0 1em; */
+.section {
+    background-color: #0000006b;
+    border-radius: 20px;
+    padding: 20px;
+    margin: 1rem 0.5rem;
 }
 
 .sort-input {
@@ -323,14 +176,10 @@ const sortedTracks = computed(() => {
     transform: rotate(180deg);
 }
 
-.search-input {
-    /* align-self: stretch; */
-    flex-grow: 1;
-    /* max-width: none; */
-}
-
-.tracks-page {
-    display: block;
-    margin: 0 1em;
+.el-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: left;
 }
 </style>

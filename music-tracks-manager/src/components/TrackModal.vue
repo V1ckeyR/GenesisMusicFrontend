@@ -1,7 +1,17 @@
 <script setup lang="ts">
-import { reactive, computed, ref, watch } from 'vue'
+import { reactive, computed, ref, watch, nextTick, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Track, TrackFormPayload } from '@/types/Track'
+import { useGenreStore } from '@/stores/genreStore'
+
+const genreStore = useGenreStore()
+
+onMounted(() => {
+  genreStore.loadGenres()
+})
+
+const availableGenres = computed(() => genreStore.genres);
+const isLoading = computed(() => genreStore.isLoading);
 
 const visible = defineModel<boolean>('visible');
 
@@ -12,6 +22,7 @@ const props = defineProps<{
 const emit = defineEmits<{
     (e: 'save', payload: TrackFormPayload): void
     (e: 'close'): void
+    (e: 'delete', track: Track): void
 }>();
 
 const formRef = ref<FormInstance>()
@@ -21,27 +32,27 @@ const defaultForm: TrackFormPayload = {
     album: '',
     genres: [],
     coverImage: '',
-    slug: ''
 }
 
+const initialFormState = ref<TrackFormPayload>({ ...defaultForm })
+
 const form = reactive<TrackFormPayload>({ ...defaultForm });
-
-
-const availableGenres = ref<string[]>(['Pop', 'Rock', 'Jazz', 'Hip-hop']);  // mock
 
 watch(
     () => props.track,
     (track) => {
         if (track) {
-            Object.assign(form, {
+            initialFormState.value = {
                 title: track.title,
                 artist: track.artist,
                 album: track.album,
                 genres: [...track.genres],
                 coverImage: track.coverImage,
-                slug: track.slug
-            })
+            }
+
+            Object.assign(form, initialFormState.value);
         } else {
+            initialFormState.value = { ...defaultForm }
             resetForm()
         }
     },
@@ -51,12 +62,20 @@ watch(
 const dialogTitle = computed(() => (props.track ? 'Edit Track' : 'New Track'));
 
 function resetForm() {
-    Object.assign(form, { ...defaultForm });
+    Object.assign(form, { ...initialFormState.value });
+    nextTick(() => {
+        formRef.value?.clearValidate()
+    })
 }
 
 function onClose() {
     resetForm();
     emit('close');
+}
+
+function onDelete() {
+    emit("delete", props.track!);
+    resetForm();    
 }
 
 function submitForm() {
@@ -68,6 +87,18 @@ function submitForm() {
     })
 }
 
+// Cover Image
+const pattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i;
+
+function isValidImageUrl(url: string): boolean {
+    return pattern.test(url.trim())
+}
+
+const coverPreviewUrl = computed(() =>
+    form.coverImage && pattern.test(form.coverImage.trim()) ? form.coverImage.trim() : null
+)
+
+// Validators
 const rules: FormRules = {
     title: [{ required: true, message: 'Enter title', trigger: 'blur' }],
     artist: [{ required: true, message: 'Enter artist', trigger: 'blur' }],
@@ -80,54 +111,88 @@ const rules: FormRules = {
             trigger: 'change'
         }
     ],
-    coverImage: [{ required: false, message: 'Enter cover image URL', trigger: 'blur' }]
+    coverImage: [
+        { required: false, message: 'Enter cover image URL', trigger: 'blur' },
+        {
+            validator: (_rule, value, callback) => {
+                if (value && !isValidImageUrl(value)) {
+                    callback(new Error('Enter a valid image URL (.jpg, .png, .webp, .svg, .gif)'))
+                } else {
+                    callback()
+                }
+            },
+            trigger: 'blur'
+        }]
 }
 </script>
 <template>
     <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose">
-        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" v-loading="isLoading">
             <el-form-item label="Title" prop="title">
-                <el-input v-model="form.title" autocomplete="off" />
+                <el-input v-model.trim="form.title" autocomplete="off" />
             </el-form-item>
 
             <el-form-item label="Artist" prop="artist">
-                <el-input v-model="form.artist" autocomplete="off" />
+                <el-input v-model.trim="form.artist" autocomplete="off" />
             </el-form-item>
 
             <el-form-item label="Album" prop="album">
-                <el-input v-model="form.album" autocomplete="off" />
+                <el-input v-model.trim="form.album" autocomplete="off" />
             </el-form-item>
 
             <el-form-item label="Genres" prop="genres">
                 <el-select v-model="form.genres" multiple filterable allow-create default-first-option
                     placeholder="Select or type genres" style="width: 100%">
-                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre"/>
+                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
                 </el-select>
-            </el-form-item>
-
-            <el-form-item label="Slug" prop="slug">
-                <el-input v-model="form.slug" autocomplete="off" />
             </el-form-item>
 
             <el-form-item label="Cover Image" prop="coverImage">
                 <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg" />
             </el-form-item>
+
+            <div class="cover">
+                <img v-if="coverPreviewUrl" :src="coverPreviewUrl" alt="Preview" @error="form.coverImage = ''" />
+                <el-icon v-else :size="56">
+                    <Picture />
+                </el-icon>
+            </div>
+
         </el-form>
         <template #footer>
-            <el-button @click="resetForm">Reset</el-button>
+            <el-button v-if="props.track?.id" type="danger" @click="onDelete">Delete</el-button>
             <el-button @click="onClose">Cancel</el-button>
+            <el-button @click="resetForm">Reset</el-button>
             <el-button type="primary" @click="submitForm">Save</el-button>
         </template>
     </el-dialog>
 </template>
 
-<style>
+<style scoped>
 .el-tag {
     color: white;
     background-color: #409EFF;
 }
 
+.el-form {
+    padding-right: 2rem;
+}
+
 svg {
     color: white;
+}
+
+.cover {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    width: 100%;
+    height: 100%;
+}
+
+.cover img {
+    width: 56px;
+    height: 56px;
+    border-radius: 4px;
+    object-fit: cover;
 }
 </style>
