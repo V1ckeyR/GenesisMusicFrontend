@@ -87,15 +87,15 @@ const rules: FormRules = {
     <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
             <el-form-item label="Title" prop="title">
-                <el-input v-model="form.title" autocomplete="off" />
+                <el-input v-model.trim="form.title" autocomplete="off" />
             </el-form-item>
 
             <el-form-item label="Artist" prop="artist">
-                <el-input v-model="form.artist" autocomplete="off" />
+                <el-input v-model.trim="form.artist" autocomplete="off" />
             </el-form-item>
 
             <el-form-item label="Album" prop="album">
-                <el-input v-model="form.album" autocomplete="off" />
+                <el-input v-model.trim="form.album" autocomplete="off" />
             </el-form-item>
 
             <el-form-item label="Genres" prop="genres">
@@ -106,7 +106,7 @@ const rules: FormRules = {
             </el-form-item>
 
             <el-form-item label="Slug" prop="slug">
-                <el-input v-model="form.slug" autocomplete="off" />
+                <el-input v-model.trim="form.slug" autocomplete="off" />
             </el-form-item>
 
             <el-form-item label="Cover Image" prop="coverImage">
