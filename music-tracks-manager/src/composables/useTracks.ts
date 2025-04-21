@@ -19,16 +19,22 @@ export function useTracks() {
     const searchByRaw = ref('');
     const searchBy = ref('');
 
+    const selectedArtist = ref<string | null>(null)
+    const selectedGenre = ref<string | null>(null)
+
     // Load on page/limit change
     async function loadTracks() {
         isLoading.value = true
+        const start = performance.now()
         try {
             const response = await fetchTracks({
                 page: page.value,
                 limit: limit.value,
                 sort: sortBy.value || undefined,
                 order: sortOrder.value || undefined,
-                search: searchBy.value || undefined
+                search: searchBy.value || undefined,
+                artist: selectedArtist.value || undefined,
+                genre: selectedGenre.value || undefined
             })
             tracks.value = response.data;
             total.value = response.meta.total;
@@ -36,7 +42,12 @@ export function useTracks() {
         } catch (error) {
             ElMessage.error('Failed to load tracks')
         } finally {
-            isLoading.value = false
+            const elapsed = performance.now() - start
+            const delay = Math.max(0, 500 - elapsed) // min. 500ms
+            setTimeout(() => {
+              isLoading.value = false
+            }, delay)
+        
         }
     }
 
@@ -44,10 +55,21 @@ export function useTracks() {
 
 
     // Reset page if sort/search changes
-    watch([sortBy, sortOrder, searchBy], () => {
+    watch([sortBy, sortOrder, searchBy, selectedArtist, selectedGenre], () => {
         page.value = 1;
         loadTracks();
     })
+
+    // Filters
+    const uniqueArtists = computed(() => {
+        const artists = tracks.value.map(t => t.artist);
+        return [...new Set(artists)].sort()
+    })
+
+    function resetFilters() {
+        selectedArtist.value = null
+        selectedGenre.value = null
+    }
 
     // Debounce
     let debounceTimer: number | null = null;
@@ -90,9 +112,14 @@ export function useTracks() {
         sortOrder,
         searchByRaw,
         searchBy,
+        selectedArtist,
+        selectedGenre,
+
+        uniqueArtists,
 
         // Functions
         loadTracks,
-        saveTrack
+        saveTrack,
+        resetFilters
     }
 }

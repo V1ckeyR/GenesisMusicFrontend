@@ -7,8 +7,6 @@ import { useGenres } from '@/composables/useGenres';
 const {
     isLoading,
     availableGenres,
-
-    loadGenres
 } = useGenres();
 
 const visible = defineModel<boolean>('visible');
@@ -54,10 +52,6 @@ watch(
 )
 
 const dialogTitle = computed(() => (props.track ? 'Edit Track' : 'New Track'));
-
-onMounted(() => {
-    loadGenres();
-});
 
 function resetForm() {
     Object.assign(form, { ...defaultForm });

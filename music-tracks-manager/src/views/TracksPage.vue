@@ -4,10 +4,11 @@ import { ref, onMounted } from 'vue'
 import TrackCard from '@/components/TrackCard.vue'
 import TrackModal from '@/components/TrackModal.vue'
 import TrackCardSkeleton from '@/components/TrackCardSkeleton.vue'
-import { ArrowUp } from '@element-plus/icons-vue'
+import { ArrowUp, Filter, SortUp } from '@element-plus/icons-vue'
 
 import type { Track, TrackFormPayload } from '@/types/Track'
 import { useTracks } from '@/composables/useTracks'
+import { useGenres } from '@/composables/useGenres'
 
 const {
     // States
@@ -18,19 +19,30 @@ const {
     total,
     page,
     limit,
-    totalPages,
 
     sortBy,
     sortOrder,
     searchByRaw,
-    searchBy,
+    selectedArtist,
+    selectedGenre,
+
+    uniqueArtists,
 
     // Functions
     loadTracks,
-    saveTrack
+    saveTrack,
+    resetFilters
 } = useTracks()
 
-onMounted(() => loadTracks());
+const {
+    availableGenres,
+    loadGenres
+} = useGenres()
+
+onMounted(() => {
+    loadTracks();
+    loadGenres();
+});
 
 // States
 const selectedTrack = ref<Track | null>(null);
@@ -70,72 +82,80 @@ function toggleSortOrder() {
 <template>
     <div class="common-layout">
         <el-container>
-            <el-header>
-                <div class="actions">
-                    <el-button type="primary" plain @click="onCreateClick" icon="Plus">Create Track</el-button>
+            <el-aside width="200px" class="section">
+                <el-button type="primary" plain @click="onCreateClick" icon="Plus">Create Track</el-button>
 
-                    <div class="sort-input">
-                        <el-select v-model="sortBy" placeholder="Sort by" clearable class="input-field">
-                            <el-option label="Title" value="title" />
-                            <el-option label="Artist" value="artist" />
-                            <el-option label="Album" value="album" />
-                            <el-option label="Created At" value="createdAt" />
-                        </el-select>
-                        <el-button @click="toggleSortOrder" circle class="sort-order-button"
-                            :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'">
-                            <el-icon :class="{ rotated: sortOrder === 'desc' }">
-                                <ArrowUp />
-                            </el-icon>
-                        </el-button>
+                <el-divider />
 
-                    </div>
+                <span>Sort By <el-icon size="small">
+                        <Sort />
+                    </el-icon>
+                </span>
 
-                    <el-input v-model="searchByRaw" placeholder="Search..." clearable prefix-icon="Search"
-                        class="input-field search-input" />
+                <div class="sort-input">
+                    <el-select v-model="sortBy" placeholder="Sort by" clearable>
+                        <el-option label="Title" value="title" />
+                        <el-option label="Artist" value="artist" />
+                        <el-option label="Album" value="album" />
+                        <el-option label="Created At" value="createdAt" />
+                    </el-select>
+                    <el-button @click="toggleSortOrder" circle class="sort-order-button"
+                        :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'">
+                        <el-icon :class="{ rotated: sortOrder === 'desc' }" size="small">
+                            <SortUp />
+                        </el-icon>
+                    </el-button>
                 </div>
-            </el-header>
 
-            <el-container>
-                <el-aside width="200px">Filters will be here</el-aside>
-                <el-main>
-                    <TrackCardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" />
+                <el-divider />
 
-                    <div v-else class="tracks-page">
-                        <TrackCard v-for="(track, index) in tracks" :key="track.id" :track="track" :number="index + 1"
-                            class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
-                    </div>
+                <span>Filters <el-icon size="small">
+                        <Filter />
+                    </el-icon>
+                </span>
 
-                    <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
-                        @close="onCloseModal" />
-                    <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10, 20, 50]"
-                        layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
-                        :hide-on-single-page="true" />
-                </el-main>
-            </el-container>
+                <el-button v-if="selectedArtist || selectedGenre" type="default" plain icon="Close" style="width: 100%"
+                    @click="resetFilters">
+                    Reset Filters
+                </el-button>
+
+                <el-select v-model="selectedArtist" clearable placeholder="Choose artist" style="width: 100%">
+                    <el-option v-for="artist in uniqueArtists" :key="artist" :label="artist" :value="artist" />
+                </el-select>
+
+                <el-select v-model="selectedGenre" clearable placeholder="Choose genre" style="width: 100%">
+                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
+                </el-select>
+            </el-aside>
+
+            <el-main class="section">
+                <el-input v-model="searchByRaw" placeholder="Search..." clearable prefix-icon="Search"
+                    class="search-input" />
+
+                <div class="tracks-page">
+                    <TrackCardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
+
+                    <TrackCard v-else v-for="(track, index) in tracks" :key="track.id" :track="track" :number="index + 1"
+                        class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
+                </div>
+
+                <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
+                    @close="onCloseModal" />
+                <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10]"
+                    layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
+                    :hide-on-single-page="true" />
+            </el-main>
         </el-container>
     </div>
 </template>
 
 
 <style>
-.actions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-evenly;
-    gap: 1rem;
-}
-
-.el-header {
-    height: auto !important;
-    min-width: 80vw;
-    margin: 1rem 0;
-}
-
-.input-field {
-    width: 140px !important;
-    max-width: 240px;
-    flex: 0 0 auto;
-    /* margin: 0 1em; */
+.section {
+    background-color: #0000006b;
+    border-radius: 20px;
+    padding: 20px;
+    margin: 1rem 0.5rem;
 }
 
 .sort-input {
@@ -152,14 +172,10 @@ function toggleSortOrder() {
     transform: rotate(180deg);
 }
 
-.search-input {
-    /* align-self: stretch; */
-    flex-grow: 1;
-    /* max-width: none; */
-}
-
-.tracks-page {
-    display: block;
-    margin: 0 1em;
+.el-aside {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: left;
 }
 </style>
