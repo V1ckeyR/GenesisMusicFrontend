@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 import TrackCard from '@/components/TrackCard.vue'
 import TrackModal from '@/components/TrackModal.vue'
@@ -8,7 +8,9 @@ import { ArrowUp, Filter, SortUp } from '@element-plus/icons-vue'
 
 import type { Track, TrackFormPayload } from '@/types/Track'
 import { useTracks } from '@/composables/useTracks'
-import { useGenres } from '@/composables/useGenres'
+import { useGenreStore } from '@/stores/genreStore'
+
+const genreStore = useGenreStore();
 
 const {
     // States
@@ -34,17 +36,16 @@ const {
     resetFilters
 } = useTracks()
 
-const {
-    availableGenres,
-    loadGenres
-} = useGenres()
 
 onMounted(() => {
     loadTracks();
-    loadGenres();
+    genreStore.loadGenres();
 });
 
 // States
+const availableGenres = computed(() => genreStore.genres)
+const isLoadingGenres = computed(() => genreStore.isLoading)
+
 const selectedTrack = ref<Track | null>(null);
 const isModalVisible = ref(false);
 
@@ -115,7 +116,7 @@ function toggleSortOrder() {
                 </span>
 
                 <el-button v-if="selectedArtist || selectedGenre" type="default" plain icon="Close" style="width: 100%"
-                    @click="resetFilters">
+                    @click="resetFilters" v-loading="isLoading">
                     Reset Filters
                 </el-button>
 
@@ -135,8 +136,8 @@ function toggleSortOrder() {
                 <div class="tracks-page">
                     <TrackCardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
 
-                    <TrackCard v-else v-for="(track, index) in tracks" :key="track.id" :track="track" :number="index + 1"
-                        class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
+                    <TrackCard v-else v-for="(track, index) in tracks" :key="track.id" :track="track"
+                        :number="index + 1" class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
                 </div>
 
                 <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"

@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { reactive, computed, ref, watch, onMounted, nextTick } from 'vue'
+import { reactive, computed, ref, watch, nextTick, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Track, TrackFormPayload } from '@/types/Track'
-import { useGenres } from '@/composables/useGenres';
+import { useGenreStore } from '@/stores/genreStore'
 
-const {
-    isLoading,
-    availableGenres,
-} = useGenres();
+const genreStore = useGenreStore()
+
+onMounted(() => {
+  genreStore.loadGenres()
+})
+
+const availableGenres = computed(() => genreStore.genres);
+const isLoading = computed(() => genreStore.isLoading);
 
 const visible = defineModel<boolean>('visible');
 
@@ -27,8 +31,9 @@ const defaultForm: TrackFormPayload = {
     album: '',
     genres: [],
     coverImage: '',
-    slug: ''
 }
+
+const initialFormState = ref<TrackFormPayload>({ ...defaultForm })
 
 const form = reactive<TrackFormPayload>({ ...defaultForm });
 
@@ -36,15 +41,17 @@ watch(
     () => props.track,
     (track) => {
         if (track) {
-            Object.assign(form, {
+            initialFormState.value = {
                 title: track.title,
                 artist: track.artist,
                 album: track.album,
                 genres: [...track.genres],
                 coverImage: track.coverImage,
-                slug: track.slug
-            })
+            }
+
+            Object.assign(form, initialFormState.value);
         } else {
+            initialFormState.value = { ...defaultForm }
             resetForm()
         }
     },
@@ -54,7 +61,7 @@ watch(
 const dialogTitle = computed(() => (props.track ? 'Edit Track' : 'New Track'));
 
 function resetForm() {
-    Object.assign(form, { ...defaultForm });
+    Object.assign(form, { ...initialFormState.value });
     nextTick(() => {
         formRef.value?.clearValidate()
     })
@@ -74,6 +81,18 @@ function submitForm() {
     })
 }
 
+// Cover Image
+const pattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i;
+
+function isValidImageUrl(url: string): boolean {
+    return pattern.test(url.trim())
+}
+
+const coverPreviewUrl = computed(() =>
+    form.coverImage && pattern.test(form.coverImage.trim()) ? form.coverImage.trim() : null
+)
+
+// Validators
 const rules: FormRules = {
     title: [{ required: true, message: 'Enter title', trigger: 'blur' }],
     artist: [{ required: true, message: 'Enter artist', trigger: 'blur' }],
@@ -86,7 +105,18 @@ const rules: FormRules = {
             trigger: 'change'
         }
     ],
-    coverImage: [{ required: false, message: 'Enter cover image URL', trigger: 'blur' }]
+    coverImage: [
+        { required: false, message: 'Enter cover image URL', trigger: 'blur' },
+        {
+            validator: (_rule, value, callback) => {
+                if (value && !isValidImageUrl(value)) {
+                    callback(new Error('Enter a valid image URL (.jpg, .png, .webp, .svg, .gif)'))
+                } else {
+                    callback()
+                }
+            },
+            trigger: 'blur'
+        }]
 }
 </script>
 <template>
@@ -111,13 +141,17 @@ const rules: FormRules = {
                 </el-select>
             </el-form-item>
 
-            <el-form-item label="Slug" prop="slug">
-                <el-input v-model.trim="form.slug" autocomplete="off" />
-            </el-form-item>
-
             <el-form-item label="Cover Image" prop="coverImage">
                 <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg" />
             </el-form-item>
+
+            <div class="cover">
+                <img v-if="coverPreviewUrl" :src="coverPreviewUrl" alt="Preview" @error="form.coverImage = ''" />
+                <el-icon v-else :size="56">
+                    <Picture />
+                </el-icon>
+            </div>
+
         </el-form>
         <template #footer>
             <el-button @click="onClose">Cancel</el-button>
@@ -127,7 +161,7 @@ const rules: FormRules = {
     </el-dialog>
 </template>
 
-<style>
+<style scoped>
 .el-tag {
     color: white;
     background-color: #409EFF;
@@ -139,5 +173,19 @@ const rules: FormRules = {
 
 svg {
     color: white;
+}
+
+.cover {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    width: 100%;
+    height: 100%;
+}
+
+.cover img {
+    width: 56px;
+    height: 56px;
+    border-radius: 4px;
+    object-fit: cover;
 }
 </style>

@@ -12,7 +12,7 @@ export interface Track {
 }
 
 
-export type TrackFormPayload = Omit<Track, 'id' | 'audioFile' | 'createdAt' | 'updatedAt'>
+export type TrackFormPayload = Omit<Track, 'id' | 'slug' | 'audioFile' | 'createdAt' | 'updatedAt'>
 
 export type TrackListResponse = {
   data: Track[]
