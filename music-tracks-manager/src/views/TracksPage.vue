@@ -1,84 +1,80 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 
-import TrackCard from '@/components/TrackCard.vue'
-import TrackModal from '@/components/TrackModal.vue'
-import TrackCardSkeleton from '@/components/TrackCardSkeleton.vue'
-import { ArrowUp, Filter, SortUp } from '@element-plus/icons-vue'
+import { Filter, SortUp } from '@element-plus/icons-vue'
 
 import type { Track, TrackFormPayload } from '@/types/Track'
-import { useTracks } from '@/composables/useTracks'
 import { useGenreStore } from '@/stores/genreStore'
-import { deleteTrack } from '@/services/requests'
+import { useTrackStore } from '@/stores/trackStore'
+import Form from '@/components/Form.vue'
+import Card from '@/components/Card.vue'
+import CardSkeleton from '@/components/CardSkeleton.vue'
+import AudioUpload from '@/components/AudioUpload.vue'
 
 const genreStore = useGenreStore();
-
-const {
-    // States
-    isLoading,
-
-    tracks,
-
-    total,
-    page,
-    limit,
-
-    sortBy,
-    sortOrder,
-    searchByRaw,
-    selectedArtist,
-    selectedGenre,
-
-    uniqueArtists,
-
-    // Functions
-    loadTracks,
-    saveTrack,
-    removeTrack,
-    resetFilters
-} = useTracks()
-
-
-onMounted(() => {
-    loadTracks();
-    genreStore.loadGenres();
-});
+const trackStore = useTrackStore();
 
 // States
+const {
+    tracks, total, page, limit,
+    sortBy, sortOrder,
+    searchByRaw, selectedArtist, selectedGenre,
+    uniqueArtists, isLoading
+} = storeToRefs(trackStore)
+
+const { loadTracks, saveTrack, removeTrack, resetFilters, toggleSortOrder, updateSearch, confirmAndDeleteAudio } = trackStore
+
 const availableGenres = computed(() => genreStore.genres)
 const isLoadingGenres = computed(() => genreStore.isLoading)
 
 const selectedTrack = ref<Track | null>(null);
-const isModalVisible = ref(false);
+const isTrackFormVisible = ref(false);
+const isUploadDialogVisible = ref(false)
 
+onMounted(() => {
+    genreStore.loadGenres();
+    loadTracks();
+})
 
 // Functions
 function onCreateClick() {
     selectedTrack.value = null;
-    isModalVisible.value = true;
+    isTrackFormVisible.value = true;
 }
 
 function onEditTrack(track: Track) {
     selectedTrack.value = track;
-    isModalVisible.value = true;
+    isTrackFormVisible.value = true;
 }
 
 function onDeleteTrack(track: Track) {
     removeTrack(track);
-    isModalVisible.value = false;
+    onCloseModal();
 }
 
 function onSaveTrack(data: TrackFormPayload) {
     saveTrack(data, selectedTrack.value?.id);
-    isModalVisible.value = false;
+    onCloseModal();
 }
 
 function onCloseModal() {
-    isModalVisible.value = false;
+    isTrackFormVisible.value = false;
+    selectedTrack.value = null;
 }
 
-function toggleSortOrder() {
-    sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+function onUploadAudio(track: Track) {
+    isUploadDialogVisible.value = true;
+    selectedTrack.value = track;
+}
+
+function onCloseUploadDialog() {
+    isUploadDialogVisible.value = false;
+    selectedTrack.value = null;
+}
+
+function onPlayAudio() {
+    console.log('Play music')
 }
 
 </script>
@@ -86,6 +82,11 @@ function toggleSortOrder() {
 <template>
     <div class="common-layout">
         <el-container>
+            <Form :track="selectedTrack" :visible="isTrackFormVisible" @save="onSaveTrack" @close="onCloseModal"
+                @delete="onDeleteTrack" />
+
+            <AudioUpload :visible="isUploadDialogVisible" :track="selectedTrack" @close="onCloseUploadDialog" />
+
             <el-aside width="200px" class="section">
                 <el-button type="primary" plain @click="onCreateClick" icon="Plus">Create Track</el-button>
 
@@ -137,14 +138,12 @@ function toggleSortOrder() {
                     class="search-input" />
 
                 <div class="tracks-page">
-                    <TrackCardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
+                    <CardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
 
-                    <TrackCard v-else v-for="(track, index) in tracks" :key="track.id" :track="track"
-                        :number="index + 1" class="mb-2" @edit="onEditTrack" @delete="onDeleteTrack" />
+                    <Card v-else v-for="(track, index) in tracks" :key="track.id" :track="track" :number="index + 1"
+                        @edit="onEditTrack" @delete="onDeleteTrack" @play-audio="onPlayAudio"
+                        @upload-audio="onUploadAudio" @delete-audio="confirmAndDeleteAudio" />
                 </div>
-
-                <TrackModal :track="selectedTrack" :visible="isModalVisible" @save="onSaveTrack"
-                    @close="onCloseModal" @delete="onDeleteTrack" />
                 <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10]"
                     layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
                     :hide-on-single-page="true" />
@@ -154,7 +153,7 @@ function toggleSortOrder() {
 </template>
 
 
-<style>
+<style scoped>
 .section {
     background-color: #0000006b;
     border-radius: 20px;

@@ -1,3 +1,50 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import type { Track } from '@/types/Track'
+import { Edit } from '@element-plus/icons-vue';
+
+const props = defineProps<{
+    track: Track,
+    number: number
+}>()
+
+const isHovered = ref<Boolean>(false);
+
+const emit = defineEmits<{
+    (e: 'edit', payload: Track): void
+    (e: 'delete', payload: Track): void
+    (e: 'play-audio', payload: Track): void
+    (e: 'upload-audio', payload: Track): void
+    (e: 'delete-audio', payload: Track): void
+}>();
+
+const onEdit = () => emit("edit", props.track)
+const onDelete = () => emit("delete", props.track)
+const onPlay = () => emit("play-audio", props.track)
+
+function handleAudioCommand(command: string) {
+    switch (command) {
+        case 'upload':
+            emit('upload-audio', props.track)
+            break
+        case 'delete':
+            emit('delete-audio', props.track)
+            break
+    }
+}
+
+function formatDate(iso: string): string {
+    return new Intl.DateTimeFormat('uk-UA', {
+        dateStyle: 'short',
+        timeStyle: 'short'
+    }).format(new Date(iso))
+}
+
+function onImageError(event: Event) {
+    (event.target as HTMLImageElement).src = 'https://element-plus.org/images/element-plus-logo.svg'
+}
+</script>
+
 <template>
     <div class="track-card" @mouseenter="isHovered = true" @mouseleave="isHovered = false">
         <!-- Number -->
@@ -11,7 +58,7 @@
             <el-icon v-else :size="56">
                 <Picture />
             </el-icon>
-            <el-icon v-if="isHovered" class="play-icon">
+            <el-icon v-if="isHovered && track.audioFile" class="play-icon">
                 <VideoPlay />
             </el-icon>
         </div>
@@ -32,52 +79,20 @@
             <el-icon @click="onDelete">
                 <Delete />
             </el-icon>
+            <el-dropdown trigger="click" @command="handleAudioCommand">
+                <el-icon class="more-icon">
+                    <MoreFilled />
+                </el-icon>
+                <template #dropdown>
+                    <el-dropdown-menu>
+                        <el-dropdown-item command="upload">Upload Audio</el-dropdown-item>
+                        <el-dropdown-item command="delete" :disabled="!track.audioFile">Delete Audio</el-dropdown-item>
+                    </el-dropdown-menu>
+                </template>
+            </el-dropdown>
         </div>
     </div>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import type { Track } from '@/types/Track'
-import { Edit } from '@element-plus/icons-vue';
-
-const props = defineProps<{
-    track: Track,
-    number: number
-}>()
-
-const emit = defineEmits<{
-    (e: 'edit', payload: Track): void
-    (e: 'delete', payload: Track): void
-}>();
-
-
-const isHovered = ref<Boolean>(false)
-
-function onPlay() {
-    console.log('Play', props.track.title)
-}
-
-function onEdit() {
-    emit("edit", props.track)
-}
-
-function onDelete() {
-    emit("delete", props.track)
-}
-
-function formatDate(iso: string): string {
-    return new Intl.DateTimeFormat('uk-UA', {
-        dateStyle: 'short',
-        timeStyle: 'short'
-    }).format(new Date(iso))
-}
-
-function onImageError(event: Event) {
-    (event.target as HTMLImageElement).src = 'https://element-plus.org/images/element-plus-logo.svg'
-}
-
-</script>
 
 <style scoped>
 .track-card {

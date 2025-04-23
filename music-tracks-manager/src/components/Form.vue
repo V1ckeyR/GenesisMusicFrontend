@@ -6,12 +6,13 @@ import { useGenreStore } from '@/stores/genreStore'
 
 const genreStore = useGenreStore()
 
-onMounted(() => {
-  genreStore.loadGenres()
-})
-
 const availableGenres = computed(() => genreStore.genres);
 const isLoading = computed(() => genreStore.isLoading);
+onMounted(() => {
+    if (!availableGenres.value) {
+        genreStore.loadGenres()
+    }
+})
 
 const visible = defineModel<boolean>('visible');
 
