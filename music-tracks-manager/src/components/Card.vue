@@ -1,26 +1,28 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import type { Track } from '@/types/Track'
-import { Edit } from '@element-plus/icons-vue';
+import { Edit } from '@element-plus/icons-vue'
+import { useAudioPlayer } from '@/composables/useAudioPlayer'
 
 const props = defineProps<{
     track: Track,
     number: number
 }>()
 
+const { currentTrack, play } = useAudioPlayer()
 const isHovered = ref<Boolean>(false);
+const isCurrent = computed(() => currentTrack.value?.id === props.track.id)
 
 const emit = defineEmits<{
     (e: 'edit', payload: Track): void
     (e: 'delete', payload: Track): void
-    (e: 'play-audio', payload: Track): void
     (e: 'upload-audio', payload: Track): void
     (e: 'delete-audio', payload: Track): void
 }>();
 
 const onEdit = () => emit("edit", props.track)
 const onDelete = () => emit("delete", props.track)
-const onPlay = () => emit("play-audio", props.track)
+const onPlay = () => play(props.track)
 
 function handleAudioCommand(command: string) {
     switch (command) {
@@ -55,28 +57,30 @@ function onImageError(event: Event) {
         <!-- Cover -->
         <div class="cover" @click="onPlay">
             <img v-if="track.coverImage" :src="track.coverImage" alt="cover" @error="onImageError" />
-            <el-icon v-else :size="56">
+            <el-icon v-else :size="64">
                 <Picture />
             </el-icon>
             <el-icon v-if="isHovered && track.audioFile" class="play-icon">
-                <VideoPlay />
+                <CircleClose v-if="isCurrent"/>
+                <VideoPlay v-else />
             </el-icon>
         </div>
 
         <!-- Info -->
         <div class="track-info" @click="onPlay">
-            <div class="track-title">{{ track.title }}</div>
-            <div class="track-artist">{{ track.artist }} · {{ track.album || "single" }} | created at {{
+            <div class="track-title" :data-testid="`track-item-${props.track.id}-title`">{{ track.title }}</div>
+            <div class="track-artist" :data-testid="`track-item-${props.track.id}-artist`">{{ track.artist }} · {{ track.album || "single" }} | created at {{
                 formatDate(track.createdAt) }} | updated at {{ formatDate(track.updatedAt) }}</div>
-            <div class="track-actions track-artist" :class="{ visible: isHovered }">{{ track.slug }}...</div>
+            <audio v-if="isCurrent" :src="track.audioFile" controls style="margin-top: 0.5rem; width: 100%;" autoplay />
+            <div v-else style="height: 32px; margin-top: 8px; margin-bottom: 6px;" />
         </div>
 
         <!-- Hover buttons -->
         <div class="track-actions" :class="{ visible: isHovered }">
-            <el-icon @click="onEdit">
+            <el-icon @click="onEdit" :data-testid="`edit-track-${props.track.id}`">
                 <Edit />
             </el-icon>
-            <el-icon @click="onDelete">
+            <el-icon @click="onDelete" :data-testid="`delete-track-${props.track.id}`">
                 <Delete />
             </el-icon>
             <el-dropdown trigger="click" @command="handleAudioCommand">
@@ -85,7 +89,7 @@ function onImageError(event: Event) {
                 </el-icon>
                 <template #dropdown>
                     <el-dropdown-menu>
-                        <el-dropdown-item command="upload">Upload Audio</el-dropdown-item>
+                        <el-dropdown-item command="upload" :data-testid="`upload-track-${props.track.id}`">Upload Audio</el-dropdown-item>
                         <el-dropdown-item command="delete" :disabled="!track.audioFile">Delete Audio</el-dropdown-item>
                     </el-dropdown-menu>
                 </template>
@@ -98,7 +102,7 @@ function onImageError(event: Event) {
 .track-card {
     display: flex;
     align-items: center;
-    padding: 10px;
+    padding: 5px;
     transition: background-color 0.3s;
     cursor: pointer;
     border-radius: 20px;
@@ -130,8 +134,8 @@ function onImageError(event: Event) {
 
 .cover {
     position: relative;
-    width: 56px;
-    height: 56px;
+    width: 64px;
+    height: 64px;
     margin-right: 12px;
 }
 
@@ -144,8 +148,8 @@ function onImageError(event: Event) {
 
 .play-icon {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 16px;
+    left: 16px;
     font-size: 24px;
     color: white;
     background: rgba(0, 0, 0, 0.4);
@@ -183,5 +187,9 @@ function onImageError(event: Event) {
     color: #888;
     font-size: 12px;
     margin-left: 16px;
+}
+
+audio {
+    height: 32px;
 }
 </style>

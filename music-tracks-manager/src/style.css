@@ -28,9 +28,6 @@ body {
   display: flex;
   place-items: center;
   min-width: 320px;
-  min-height: 100%;
-  background: radial-gradient(circle at 100%, #000000, #070707 30%, #160561 50%, #330050 75%, #070707 75%) no-repeat;
-  background-size: cover;
 }
 
 h1 {
@@ -64,11 +61,14 @@ button:focus-visible {
 }
 
 #app {
-  height: 100vh;
-  max-width: 100vw;
+  height: 100%;
+  width: 100vw;
+  min-height: 100vh;
   margin: 0 auto;
-  padding: 0 2rem;
+  padding: 0.5rem 2rem;
   text-align: center;
+  background: radial-gradient(circle at 100%, #000000, #070707 30%, #160561 50%, #330050 75%, #070707 75%) no-repeat;
+  background-size: cover;
 }
 
 @media (prefers-color-scheme: light) {

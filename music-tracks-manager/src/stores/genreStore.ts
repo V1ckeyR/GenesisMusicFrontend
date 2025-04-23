@@ -25,7 +25,7 @@ export const useGenreStore = defineStore('genre', {
                         {
                             confirmButtonText: 'Try again',
                             cancelButtonText: 'Cancel',
-                            type: 'error'
+                            type: 'error',
                         }
                     )
                     await this.loadGenres()

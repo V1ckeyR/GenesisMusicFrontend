@@ -15,7 +15,7 @@ const props = defineProps<{ number: number }>()
         
           <!-- Обкладинка -->
           <div class="cover">
-            <el-skeleton-item variant="image" style="width: 56px; height: 56px; border-radius: 6px;" />
+            <el-skeleton-item variant="image" style="width: 64px; height: 64px; border-radius: 6px;" />
           </div>
   
           <!-- Інформація про трек -->

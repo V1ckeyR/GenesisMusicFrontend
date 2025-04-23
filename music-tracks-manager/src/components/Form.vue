@@ -76,7 +76,7 @@ function onClose() {
 
 function onDelete() {
     emit("delete", props.track!);
-    resetForm();    
+    resetForm();
 }
 
 function submitForm() {
@@ -127,29 +127,31 @@ const rules: FormRules = {
 }
 </script>
 <template>
-    <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose">
+    <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose"
+        data-testid="track-form">
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" v-loading="isLoading">
             <el-form-item label="Title" prop="title">
-                <el-input v-model.trim="form.title" autocomplete="off" />
+                <el-input v-model.trim="form.title" autocomplete="off" data-testid="input-title" />
             </el-form-item>
 
             <el-form-item label="Artist" prop="artist">
-                <el-input v-model.trim="form.artist" autocomplete="off" />
+                <el-input v-model.trim="form.artist" autocomplete="off" data-testid="input-artist" />
             </el-form-item>
 
             <el-form-item label="Album" prop="album">
-                <el-input v-model.trim="form.album" autocomplete="off" />
+                <el-input v-model.trim="form.album" autocomplete="off" data-testid="input-album" />
             </el-form-item>
 
             <el-form-item label="Genres" prop="genres">
                 <el-select v-model="form.genres" multiple filterable allow-create default-first-option
-                    placeholder="Select or type genres" style="width: 100%">
+                    placeholder="Select or type genres" style="width: 100%" data-testid="genre-selector">
                     <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
                 </el-select>
             </el-form-item>
 
             <el-form-item label="Cover Image" prop="coverImage">
-                <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg" />
+                <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg"
+                    data-testid="input-cover-image" />
             </el-form-item>
 
             <div class="cover">
@@ -164,7 +166,7 @@ const rules: FormRules = {
             <el-button v-if="props.track?.id" type="danger" @click="onDelete">Delete</el-button>
             <el-button @click="onClose">Cancel</el-button>
             <el-button @click="resetForm">Reset</el-button>
-            <el-button type="primary" @click="submitForm">Save</el-button>
+            <el-button type="primary" @click="submitForm" data-testid="submit-button">Save</el-button>
         </template>
     </el-dialog>
 </template>

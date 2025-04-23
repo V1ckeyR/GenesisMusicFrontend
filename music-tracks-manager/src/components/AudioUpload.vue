@@ -38,7 +38,7 @@ function handleFileChange(event: Event) {
 }
 
 async function handleUpload(file: File) {
-    const isValid = ['audio/mpeg', 'audio/wav', 'audio/ogg'].includes(file.type)
+    const isValid = ['audio/mpeg', 'audio/wav', 'audio/mp3', 'audio/x-wav'].includes(file.type)
     const isLt10MB = file.size / 1024 / 1024 < 10
 
     if (!isValid) {

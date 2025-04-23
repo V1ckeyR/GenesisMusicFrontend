@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 
 import { Filter, SortUp } from '@element-plus/icons-vue'
@@ -23,7 +23,15 @@ const {
     uniqueArtists, isLoading
 } = storeToRefs(trackStore)
 
-const { loadTracks, saveTrack, removeTrack, resetFilters, toggleSortOrder, updateSearch, confirmAndDeleteAudio } = trackStore
+const { loadTracks, saveTrack, removeTrack, resetFilters, toggleSortOrder, forceReload, confirmAndDeleteAudio } = trackStore
+
+watch(
+    [page, limit, sortBy, sortOrder, searchByRaw, selectedArtist, selectedGenre],
+    () => {
+        forceReload()
+    },
+    { immediate: true }
+)
 
 const availableGenres = computed(() => genreStore.genres)
 const isLoadingGenres = computed(() => genreStore.isLoading)
@@ -73,14 +81,11 @@ function onCloseUploadDialog() {
     selectedTrack.value = null;
 }
 
-function onPlayAudio() {
-    console.log('Play music')
-}
-
 </script>
 
 <template>
     <div class="common-layout">
+        <h2 class="section" data-testid="tracks-header">Genesis Music Manager</h2>
         <el-container>
             <Form :track="selectedTrack" :visible="isTrackFormVisible" @save="onSaveTrack" @close="onCloseModal"
                 @delete="onDeleteTrack" />
@@ -88,7 +93,8 @@ function onPlayAudio() {
             <AudioUpload :visible="isUploadDialogVisible" :track="selectedTrack" @close="onCloseUploadDialog" />
 
             <el-aside width="200px" class="section">
-                <el-button type="primary" plain @click="onCreateClick" icon="Plus">Create Track</el-button>
+                <el-button type="primary" plain @click="onCreateClick" icon="Plus"
+                    data-testid="create-track-button">Create Track</el-button>
 
                 <el-divider />
 
@@ -98,7 +104,7 @@ function onPlayAudio() {
                 </span>
 
                 <div class="sort-input">
-                    <el-select v-model="sortBy" placeholder="Sort by" clearable>
+                    <el-select v-model="sortBy" placeholder="Sort by" clearable data-testid="sort-select">
                         <el-option label="Title" value="title" />
                         <el-option label="Artist" value="artist" />
                         <el-option label="Album" value="album" />
@@ -124,29 +130,34 @@ function onPlayAudio() {
                     Reset Filters
                 </el-button>
 
-                <el-select v-model="selectedArtist" clearable placeholder="Choose artist" style="width: 100%">
+                <el-select v-model="selectedArtist" clearable placeholder="Choose artist" style="width: 100%"
+                    data-testid="filter-artist">
                     <el-option v-for="artist in uniqueArtists" :key="artist" :label="artist" :value="artist" />
                 </el-select>
 
-                <el-select v-model="selectedGenre" clearable placeholder="Choose genre" style="width: 100%">
+                <el-select v-model="selectedGenre" clearable placeholder="Choose genre" style="width: 100%"
+                    data-testid="filter-genre">
                     <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
                 </el-select>
             </el-aside>
 
             <el-main class="section">
                 <el-input v-model="searchByRaw" placeholder="Search..." clearable prefix-icon="Search"
-                    class="search-input" />
+                    class="search-input" data-testid="search-input" />
 
                 <div class="tracks-page">
-                    <CardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
+                    <CardSkeleton v-if="isLoading" data-testid="loading-tracks" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
 
-                    <Card v-else v-for="(track, index) in tracks" :key="track.id" :track="track" :number="index + 1"
-                        @edit="onEditTrack" @delete="onDeleteTrack" @play-audio="onPlayAudio"
-                        @upload-audio="onUploadAudio" @delete-audio="confirmAndDeleteAudio" />
+                    <Card v-else v-for="(track, index) in tracks" :key="track.id" :track="track"
+                        :number="(page - 1) * limit + index + 1" @edit="onEditTrack" @delete="onDeleteTrack"
+                        @upload-audio="onUploadAudio" @delete-audio="confirmAndDeleteAudio" :data-testid="`track-item-${track.id}`" />
                 </div>
-                <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10]"
-                    layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
-                    :hide-on-single-page="true" />
+
+                <el-affix position="bottom" :offset="60">
+                    <el-pagination v-model:current-page="page" v-model:page-size="limit"
+                        :page-sizes="[5, 10, 15, 20]" layout="total, sizes, prev, pager, next, jumper" :total="total"
+                        background class="pagination" :hide-on-single-page="true" data-testid="pagination" />
+                </el-affix>
             </el-main>
         </el-container>
     </div>
@@ -154,11 +165,22 @@ function onPlayAudio() {
 
 
 <style scoped>
+.pagination {
+    background-color: #0000009d;
+    padding: 10px;
+    width: 100%;
+    border-radius: 20px;
+}
+
 .section {
     background-color: #0000006b;
     border-radius: 20px;
     padding: 20px;
-    margin: 1rem 0.5rem;
+    margin: 0.5rem;
+}
+
+.tracks-page {
+    padding: 0.5rem 0;
 }
 
 .sort-input {
