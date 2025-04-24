@@ -126,7 +126,7 @@ function onCloseUploadDialog() {
                 </span>
 
                 <el-button v-if="selectedArtist || selectedGenre" type="default" plain icon="Close" style="width: 100%"
-                    @click="resetFilters" v-loading="isLoadingGenres">
+                    @click="resetFilters">
                     Reset Filters
                 </el-button>
 
@@ -135,7 +135,7 @@ function onCloseUploadDialog() {
                     <el-option v-for="artist in uniqueArtists" :key="artist" :label="artist" :value="artist" />
                 </el-select>
 
-                <el-select v-model="selectedGenre" clearable placeholder="Choose genre" style="width: 100%"
+                <el-select v-model="selectedGenre" v-loading="isLoadingGenres" clearable placeholder="Choose genre" style="width: 100%"
                     data-testid="filter-genre">
                     <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
                 </el-select>
@@ -146,17 +146,19 @@ function onCloseUploadDialog() {
                     class="search-input" data-testid="search-input" />
 
                 <div class="tracks-page">
-                    <CardSkeleton v-if="isLoading" data-testid="loading-tracks" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
+                    <CardSkeleton v-if="isLoading" data-testid="loading-tracks" v-for="n in limit"
+                        :key="'skeleton-' + n" :number="n" />
 
                     <Card v-else v-for="(track, index) in tracks" :key="track.id" :track="track"
                         :number="(page - 1) * limit + index + 1" @edit="onEditTrack" @delete="onDeleteTrack"
-                        @upload-audio="onUploadAudio" @delete-audio="confirmAndDeleteAudio" :data-testid="`track-item-${track.id}`" />
+                        @upload-audio="onUploadAudio" @delete-audio="confirmAndDeleteAudio"
+                        :data-testid="`track-item-${track.id}`" />
                 </div>
 
                 <el-affix position="bottom" :offset="60">
-                    <el-pagination v-model:current-page="page" v-model:page-size="limit"
-                        :page-sizes="[5, 10, 15, 20]" layout="total, sizes, prev, pager, next, jumper" :total="total"
-                        background class="pagination" :hide-on-single-page="true" data-testid="pagination" />
+                    <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10, 15, 20]"
+                        layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
+                        :hide-on-single-page="true" data-testid="pagination" />
                 </el-affix>
             </el-main>
         </el-container>

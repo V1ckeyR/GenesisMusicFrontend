@@ -30,6 +30,7 @@ export const useTrackStore = defineStore('track', {
             if (this.isLoaded) return
 
             this.isLoading = true
+            // await new Promise(r => setTimeout(r, 10000));
             try {
                 const response = await fetchTracks({
                     page: this.page,

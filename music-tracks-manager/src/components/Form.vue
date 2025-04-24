@@ -3,16 +3,12 @@ import { reactive, computed, ref, watch, nextTick, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Track, TrackFormPayload } from '@/types/Track'
 import { useGenreStore } from '@/stores/genreStore'
+import Loader from '@/components/Loader.vue'
 
 const genreStore = useGenreStore()
 
 const availableGenres = computed(() => genreStore.genres);
 const isLoading = computed(() => genreStore.isLoading);
-onMounted(() => {
-    if (!availableGenres.value) {
-        genreStore.loadGenres()
-    }
-})
 
 const visible = defineModel<boolean>('visible');
 
@@ -129,7 +125,7 @@ const rules: FormRules = {
 <template>
     <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose"
         data-testid="track-form">
-        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" v-loading="isLoading">
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
             <el-form-item label="Title" prop="title">
                 <el-input v-model.trim="form.title" autocomplete="off" data-testid="input-title" />
             </el-form-item>
@@ -143,9 +139,11 @@ const rules: FormRules = {
             </el-form-item>
 
             <el-form-item label="Genres" prop="genres">
+                <Loader :visible="isLoading" />
                 <el-select v-model="form.genres" multiple filterable allow-create default-first-option
                     placeholder="Select or type genres" style="width: 100%" data-testid="genre-selector">
-                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
+                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre"
+                        :disabled="isLoading" />
                 </el-select>
             </el-form-item>
 

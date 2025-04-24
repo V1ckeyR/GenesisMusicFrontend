@@ -2,16 +2,14 @@
 import { ref, computed } from 'vue'
 import type { Track } from '@/types/Track'
 import { Edit } from '@element-plus/icons-vue'
-import { useAudioPlayer } from '@/composables/useAudioPlayer'
+import AudioPlayer from './AudioPlayer.vue';
 
 const props = defineProps<{
     track: Track,
     number: number
 }>()
 
-const { currentTrack, play } = useAudioPlayer()
 const isHovered = ref<Boolean>(false);
-const isCurrent = computed(() => currentTrack.value?.id === props.track.id)
 
 const emit = defineEmits<{
     (e: 'edit', payload: Track): void
@@ -22,7 +20,6 @@ const emit = defineEmits<{
 
 const onEdit = () => emit("edit", props.track)
 const onDelete = () => emit("delete", props.track)
-const onPlay = () => play(props.track)
 
 function handleAudioCommand(command: string) {
     switch (command) {
@@ -55,23 +52,19 @@ function onImageError(event: Event) {
         </div>
 
         <!-- Cover -->
-        <div class="cover" @click="onPlay">
+        <div class="cover">
             <img v-if="track.coverImage" :src="track.coverImage" alt="cover" @error="onImageError" />
             <el-icon v-else :size="64">
                 <Picture />
             </el-icon>
-            <el-icon v-if="isHovered && track.audioFile" class="play-icon">
-                <CircleClose v-if="isCurrent"/>
-                <VideoPlay v-else />
-            </el-icon>
         </div>
 
         <!-- Info -->
-        <div class="track-info" @click="onPlay">
+        <div class="track-info">
             <div class="track-title" :data-testid="`track-item-${props.track.id}-title`">{{ track.title }}</div>
             <div class="track-artist" :data-testid="`track-item-${props.track.id}-artist`">{{ track.artist }} · {{ track.album || "single" }} | created at {{
                 formatDate(track.createdAt) }} | updated at {{ formatDate(track.updatedAt) }}</div>
-            <audio v-if="isCurrent" :src="track.audioFile" controls style="margin-top: 0.5rem; width: 100%;" autoplay />
+            <AudioPlayer v-if="track.audioFile" :id="track.id" :file-name="track.audioFile!"/>
             <div v-else style="height: 32px; margin-top: 8px; margin-bottom: 6px;" />
         </div>
 
