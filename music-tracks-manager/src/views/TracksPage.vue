@@ -12,6 +12,7 @@ import Card from '@/components/Card.vue'
 import CardSkeleton from '@/components/CardSkeleton.vue'
 import AudioUpload from '@/components/AudioUpload.vue'
 import Pagination from '@/components/Pagination.vue'
+import Sidebar from '@/components/Sidebar.vue'
 
 const genreStore = useGenreStore();
 const trackStore = useTrackStore();
@@ -93,57 +94,7 @@ function onCloseUploadDialog() {
 
             <AudioUpload :visible="isUploadDialogVisible" :track="selectedTrack" @close="onCloseUploadDialog" />
 
-            <el-aside width="200px" class="section">
-                <el-button type="primary" plain @click="onCreateClick" icon="Plus"
-                    data-testid="create-track-button">Create Track</el-button>
-
-                <el-divider />
-
-                <span>Sort By <el-icon size="small">
-                        <Sort />
-                    </el-icon>
-                </span>
-
-                <div class="sort-input">
-                    <el-select v-model="sortBy" placeholder="Sort by" clearable data-testid="sort-select"
-                        :disabled="isLoading" :aria-disabled="isLoading">
-                        <el-option label="Title" value="title" />
-                        <el-option label="Artist" value="artist" />
-                        <el-option label="Album" value="album" />
-                        <el-option label="Created At" value="createdAt" />
-                    </el-select>
-                    <el-button @click="toggleSortOrder" circle class="sort-order-button"
-                        :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'" :disabled="isLoading"
-                        :aria-disabled="isLoading">
-                        <el-icon :class="{ rotated: sortOrder === 'desc' }" size="small">
-                            <SortUp />
-                        </el-icon>
-                    </el-button>
-                </div>
-
-                <el-divider />
-
-                <span>Filters <el-icon size="small">
-                        <Filter />
-                    </el-icon>
-                </span>
-
-                <el-button v-if="selectedArtist || selectedGenre" type="default" plain icon="Close" style="width: 100%"
-                    @click="resetFilters">
-                    Reset Filters
-                </el-button>
-
-                <el-select v-model="selectedArtist" clearable placeholder="Choose artist" style="width: 100%"
-                    data-testid="filter-artist" :disabled="isLoading" :aria-disabled="isLoading">
-                    <el-option v-for="artist in uniqueArtists" :key="artist" :label="artist" :value="artist" />
-                </el-select>
-
-                <el-select v-model="selectedGenre" v-loading="isLoadingGenres" clearable placeholder="Choose genre"
-                    style="width: 100%" data-testid="filter-genre" :disabled="isLoadingGenres"
-                    :aria-disabled="isLoadingGenres">
-                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
-                </el-select>
-            </el-aside>
+            <Sidebar class="section" @create="onCreateClick"/>
 
             <el-main class="section">
                 <el-input v-model="searchByRaw" placeholder="Search..." clearable prefix-icon="Search"
@@ -165,7 +116,7 @@ function onCloseUploadDialog() {
 </template>
 
 
-<style scoped>
+<style>
 .section {
     background-color: #0000006b;
     border-radius: 20px;
