@@ -1,150 +1,159 @@
+// trackStore.ts
 import { defineStore } from 'pinia'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed } from 'vue'
 import { fetchTracks, createTrack, updateTrack, deleteTrack, deleteTrackAudiofile, uploadTrackAudiofile } from '@/services/requests'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Track, TrackFormPayload } from '@/types/Track'
 
-export const useTrackStore = defineStore('track', {
-    state: () => ({
-        tracks: [] as Track[],
-        total: 0,
-        page: 1,
-        limit: 10,
-        sortBy: null as 'title' | 'artist' | 'album' | 'createdAt' | null,
-        sortOrder: 'asc' as 'asc' | 'desc',
-        searchByRaw: '',
-        searchBy: '',
-        selectedArtist: null as string | null,
-        selectedGenre: null as string | null,
-        isLoading: false,
-        isLoaded: false
-    }),
+export const useTrackStore = defineStore('track', () => {
+    const tracks = ref<Track[]>([])
+    const total = ref(0)
+    const page = ref(1)
+    const limit = ref(10)
+    const sortBy = ref<'title' | 'artist' | 'album' | 'createdAt' | null>(null)
+    const sortOrder = ref<'asc' | 'desc'>('asc')
+    const searchByRaw = ref('')
+    const searchBy = ref('')
+    const selectedArtist = ref<string | null>(null)
+    const selectedGenre = ref<string | null>(null)
+    const isLoading = ref(false)
+    const isLoaded = ref(false)
 
-    getters: {
-        uniqueArtists(state): string[] {
-            return Array.from(new Set(state.tracks.map(t => t.artist))).filter(Boolean)
+    const uniqueArtists = computed(() => {
+        return Array.from(new Set(tracks.value.map(t => t.artist))).filter(Boolean)
+    })
+
+    async function loadTracks() {
+        if (isLoaded.value) return
+        isLoading.value = true
+        try {
+            const response = await fetchTracks({
+                page: page.value,
+                limit: limit.value,
+                sort: sortBy.value || undefined,
+                order: sortOrder.value,
+                search: searchBy.value || undefined,
+                artist: selectedArtist.value || undefined,
+                genre: selectedGenre.value || undefined
+            })
+            tracks.value = response.data
+            total.value = response.meta.total
+            isLoaded.value = true
+        } finally {
+            isLoading.value = false
         }
-    },
+    }
 
-    actions: {
-        async loadTracks() {
-            if (this.isLoaded) return
+    function forceReload() {
+        isLoaded.value = false
+        return loadTracks()
+    }
 
-            this.isLoading = true
-            // await new Promise(r => setTimeout(r, 10000));
-            try {
-                const response = await fetchTracks({
-                    page: this.page,
-                    limit: this.limit,
-                    sort: this.sortBy ?? undefined,
-                    order: this.sortOrder,
-                    search: this.searchBy || undefined,
-                    artist: this.selectedArtist || undefined,
-                    genre: this.selectedGenre || undefined
-                })
-                this.tracks = [ ...response.data ]
-                this.total = response.meta.total
-                this.isLoaded = true
-            } finally {
-                this.isLoading = false
-            }
-        },
-
-        forceReload() {
-            this.isLoaded = false
-            return this.loadTracks()
-        },
-
-        async saveTrack(payload: TrackFormPayload, id?: string) {
-            this.isLoading = true
-            try {
-                if (id) {
-                    await updateTrack(id, payload)
-                } else {
-                    await createTrack(payload)
-                }
-                await this.forceReload()
-                ElMessage.success(`Track successfully ${id ? 'updated' : 'created'}`)
-            } catch (err) {
-                ElMessage.error(`Failed to ${id ? 'update' : 'create'} track`)
-            } finally {
-                this.isLoading = false
-            }
-        },
-
-        async removeTrack(track: Track) {
-            this.isLoading = true
-            try {
-                await deleteTrack(track.id)
-                await this.forceReload()
-                ElMessage.success('Track deleted')
-            } catch (err) {
-                ElMessage.error('Failed to delete track')
-            } finally {
-                this.isLoading = false
-            }
-        },
-
-        resetFilters() {
-            this.selectedArtist = null
-            this.selectedGenre = null
-            this.searchByRaw = ''
-            this.sortBy = null
-            this.sortOrder = 'asc'
-            this.page = 1
-            this.isLoaded = false
-            this.loadTracks()
-        },
-
-        toggleSortOrder() {
-            this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc'
-            this.isLoaded = false
-            this.loadTracks()
-        },
-
-        updateSearch() {
-            const trimmed = this.searchByRaw.trim().toLowerCase()
-            if (this.searchBy !== trimmed) {
-                this.searchBy = trimmed
-                this.page = 1
-                this.isLoaded = false
-                this.loadTracks()
-            }
-        },
-
-        async confirmAndDeleteAudio(track: Track) {
-            try {
-                await ElMessageBox.confirm(
-                    'Are you sure you want to delete this audio file?',
-                    'Delete Audio',
-                    {
-                        confirmButtonText: 'Yes',
-                        cancelButtonText: 'Cancel',
-                        type: 'warning',
-                    }
-                )
-
-                await deleteTrackAudiofile(track.id)
-                ElMessage.success('Audio file deleted')
-                this.forceReload()
-            } catch {
-                ElMessage.info('Deletion canceled')
-            }
-        },
-
-        async uploadAudioFile(track: Track, file: File): Promise<string | null> {
-            this.isLoading = true
-            try {
-                const updated = await uploadTrackAudiofile(track.id, file)
-                ElMessage.success('Audio uploaded')
-                this.forceReload()
-                return updated.audioFile || null
-            } catch {
-                ElMessage.error('Upload failed')
-                return null
-            } finally {
-                this.isLoading = false
-            }
+    async function saveTrack(payload: TrackFormPayload, id?: string) {
+        isLoading.value = true
+        try {
+            id ? await updateTrack(id, payload) : await createTrack(payload)
+            await forceReload()
+            ElMessage.success(`Track successfully ${id ? 'updated' : 'created'}`)
+        } catch {
+            ElMessage.error(`Failed to ${id ? 'update' : 'create'} track`)
+        } finally {
+            isLoading.value = false
         }
+    }
 
+    async function removeTrack(track: Track) {
+        isLoading.value = true
+        try {
+            await deleteTrack(track.id)
+            await forceReload()
+            ElMessage.success('Track deleted')
+        } catch {
+            ElMessage.error('Failed to delete track')
+        } finally {
+            isLoading.value = false
+        }
+    }
+
+    function resetFilters() {
+        selectedArtist.value = null
+        selectedGenre.value = null
+        searchByRaw.value = ''
+        sortBy.value = null
+        sortOrder.value = 'asc'
+        page.value = 1
+        isLoaded.value = false
+        loadTracks()
+    }
+
+    function toggleSortOrder() {
+        sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+        isLoaded.value = false
+        loadTracks()
+    }
+
+    function updateSearch() {
+        const trimmed = searchByRaw.value.trim().toLowerCase()
+        if (searchBy.value !== trimmed) {
+            searchBy.value = trimmed
+            page.value = 1
+            isLoaded.value = false
+            loadTracks()
+        }
+    }
+
+    async function confirmAndDeleteAudio(track: Track) {
+        try {
+            await ElMessageBox.confirm('Are you sure you want to delete this audio file?', 'Delete Audio', {
+                confirmButtonText: 'Yes',
+                cancelButtonText: 'Cancel',
+                type: 'warning'
+            })
+            await deleteTrackAudiofile(track.id)
+            ElMessage.success('Audio file deleted')
+            forceReload()
+        } catch {
+            ElMessage.info('Deletion canceled')
+        }
+    }
+
+    async function uploadAudioFile(track: Track, file: File): Promise<string | null> {
+        isLoading.value = true
+        try {
+            const updated = await uploadTrackAudiofile(track.id, file)
+            ElMessage.success('Audio uploaded')
+            forceReload()
+            return updated.audioFile || null
+        } catch {
+            ElMessage.error('Upload failed')
+            return null
+        } finally {
+            isLoading.value = false
+        }
+    }
+
+    return {
+        tracks,
+        total,
+        page,
+        limit,
+        sortBy,
+        sortOrder,
+        searchByRaw,
+        searchBy,
+        selectedArtist,
+        selectedGenre,
+        isLoading,
+        isLoaded,
+        uniqueArtists,
+        loadTracks,
+        forceReload,
+        saveTrack,
+        removeTrack,
+        resetFilters,
+        toggleSortOrder,
+        updateSearch,
+        confirmAndDeleteAudio,
+        uploadAudioFile
     }
 })

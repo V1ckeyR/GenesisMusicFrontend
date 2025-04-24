@@ -11,6 +11,7 @@ import Form from '@/components/Form.vue'
 import Card from '@/components/Card.vue'
 import CardSkeleton from '@/components/CardSkeleton.vue'
 import AudioUpload from '@/components/AudioUpload.vue'
+import Pagination from '@/components/Pagination.vue'
 
 const genreStore = useGenreStore();
 const trackStore = useTrackStore();
@@ -135,8 +136,8 @@ function onCloseUploadDialog() {
                     <el-option v-for="artist in uniqueArtists" :key="artist" :label="artist" :value="artist" />
                 </el-select>
 
-                <el-select v-model="selectedGenre" v-loading="isLoadingGenres" clearable placeholder="Choose genre" style="width: 100%"
-                    data-testid="filter-genre">
+                <el-select v-model="selectedGenre" v-loading="isLoadingGenres" clearable placeholder="Choose genre"
+                    style="width: 100%" data-testid="filter-genre">
                     <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
                 </el-select>
             </el-aside>
@@ -155,11 +156,7 @@ function onCloseUploadDialog() {
                         :data-testid="`track-item-${track.id}`" />
                 </div>
 
-                <el-affix position="bottom" :offset="60">
-                    <el-pagination v-model:current-page="page" v-model:page-size="limit" :page-sizes="[5, 10, 15, 20]"
-                        layout="total, sizes, prev, pager, next, jumper" :total="total" background class="pagination"
-                        :hide-on-single-page="true" data-testid="pagination" />
-                </el-affix>
+                <Pagination />
             </el-main>
         </el-container>
     </div>
@@ -167,13 +164,6 @@ function onCloseUploadDialog() {
 
 
 <style scoped>
-.pagination {
-    background-color: #0000009d;
-    padding: 10px;
-    width: 100%;
-    border-radius: 20px;
-}
-
 .section {
     background-color: #0000006b;
     border-radius: 20px;
