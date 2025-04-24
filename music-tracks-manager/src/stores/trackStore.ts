@@ -4,8 +4,9 @@ import { ref, computed, } from 'vue'
 import { fetchTracks, createTrack, updateTrack, deleteTrack, deleteTrackAudiofile, uploadTrackAudiofile } from '@/services/requests'
 import type { Track, TrackFormPayload } from '@/types/Track'
 import { useToast } from '@/composables/useToast'
-import { ElMessageBox } from 'element-plus'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
 
+const confirm = useConfirmDialog()
 const ElMessage = useToast()
 
 export const useTrackStore = defineStore('track', () => {
@@ -66,6 +67,13 @@ export const useTrackStore = defineStore('track', () => {
     }
 
     async function removeTrack(track: Track) {
+        const ok = await confirm('Are you sure you want to delete this track?', 'Delete Track', {
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'Cancel',
+        })
+
+        if (!ok) return
+
         isLoading.value = true
         try {
             await deleteTrack(track.id)
@@ -106,16 +114,15 @@ export const useTrackStore = defineStore('track', () => {
     }
 
     async function confirmAndDeleteAudio(track: Track) {
-        try {
-            await ElMessageBox.confirm('Are you sure you want to delete this audio file?', 'Delete Audio', {
-                confirmButtonText: 'Yes',
-                cancelButtonText: 'Cancel',
-                type: 'warning'
-            })
+        const ok = await confirm('Are you sure you want to delete this audio file?', 'Delete Audio', {
+            confirmButtonText: 'Yes',
+            cancelButtonText: 'Cancel',
+        })
+        if (ok) {
             await deleteTrackAudiofile(track.id)
             ElMessage.success('Audio file deleted')
             forceReload()
-        } catch {
+        } else {
             ElMessage.info('Deletion canceled')
         }
     }
