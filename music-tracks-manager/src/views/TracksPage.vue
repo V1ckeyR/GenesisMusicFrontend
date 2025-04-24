@@ -105,14 +105,16 @@ function onCloseUploadDialog() {
                 </span>
 
                 <div class="sort-input">
-                    <el-select v-model="sortBy" placeholder="Sort by" clearable data-testid="sort-select">
+                    <el-select v-model="sortBy" placeholder="Sort by" clearable data-testid="sort-select"
+                        :disabled="isLoading" :aria-disabled="isLoading">
                         <el-option label="Title" value="title" />
                         <el-option label="Artist" value="artist" />
                         <el-option label="Album" value="album" />
                         <el-option label="Created At" value="createdAt" />
                     </el-select>
                     <el-button @click="toggleSortOrder" circle class="sort-order-button"
-                        :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'">
+                        :title="sortOrder === 'asc' ? 'Ascending' : 'Descending'" :disabled="isLoading"
+                        :aria-disabled="isLoading">
                         <el-icon :class="{ rotated: sortOrder === 'desc' }" size="small">
                             <SortUp />
                         </el-icon>
@@ -132,22 +134,23 @@ function onCloseUploadDialog() {
                 </el-button>
 
                 <el-select v-model="selectedArtist" clearable placeholder="Choose artist" style="width: 100%"
-                    data-testid="filter-artist">
+                    data-testid="filter-artist" :disabled="isLoading" :aria-disabled="isLoading">
                     <el-option v-for="artist in uniqueArtists" :key="artist" :label="artist" :value="artist" />
                 </el-select>
 
                 <el-select v-model="selectedGenre" v-loading="isLoadingGenres" clearable placeholder="Choose genre"
-                    style="width: 100%" data-testid="filter-genre">
+                    style="width: 100%" data-testid="filter-genre" :disabled="isLoadingGenres"
+                    :aria-disabled="isLoadingGenres">
                     <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
                 </el-select>
             </el-aside>
 
             <el-main class="section">
                 <el-input v-model="searchByRaw" placeholder="Search..." clearable prefix-icon="Search"
-                    class="search-input" data-testid="search-input" />
+                    class="search-input" data-testid="search-input" :disabled="isLoading" :aria-disabled="isLoading" />
 
-                <div class="tracks-page">
-                    <CardSkeleton v-if="isLoading" data-testid="loading-tracks" v-for="n in limit"
+                <div class="tracks-page" :data-loading="isLoading" data-testid="loading-tracks">
+                    <CardSkeleton v-if="isLoading" v-for="n in limit"
                         :key="'skeleton-' + n" :number="n" />
 
                     <Card v-else v-for="(track, index) in tracks" :key="track.id" :track="track"

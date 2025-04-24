@@ -17,9 +17,9 @@ function goNext() {
 </script>
 
 <template>
-    <el-affix position="bottom" :offset="20">
+    <el-affix position="bottom" :offset="40">
         <div class="custom-pagination-wrapper" data-testid="pagination">
-            <button @click="goPrev" :disabled="page === 1" data-testid="pagination-prev">
+            <button v-show="total" @click="goPrev" :disabled="page === 1" data-testid="pagination-prev">
                 ⬅ Prev
             </button>
 
@@ -27,7 +27,7 @@ function goNext() {
                 :page-sizes="[5, 10, 15, 20]" layout="total, sizes, pager, jumper" background hide-on-single-page
                 class="hidden-native-nav" />
 
-            <button @click="goNext" :disabled="page >= Math.ceil(total / limit)" data-testid="pagination-next">
+            <button v-show="total" @click="goNext" :disabled="page >= Math.ceil(total / limit)" data-testid="pagination-next">
                 Next ➡
             </button>
         </div>

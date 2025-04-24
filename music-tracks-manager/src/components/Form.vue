@@ -128,14 +128,23 @@ const rules: FormRules = {
         <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
             <el-form-item label="Title" prop="title">
                 <el-input v-model.trim="form.title" autocomplete="off" data-testid="input-title" />
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-title" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <el-form-item label="Artist" prop="artist">
                 <el-input v-model.trim="form.artist" autocomplete="off" data-testid="input-artist" />
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-artist" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <el-form-item label="Album" prop="album">
                 <el-input v-model.trim="form.album" autocomplete="off" data-testid="input-album" />
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-album" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <el-form-item label="Genres" prop="genres">
@@ -145,11 +154,17 @@ const rules: FormRules = {
                     <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre"
                         :disabled="isLoading" />
                 </el-select>
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-genre" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <el-form-item label="Cover Image" prop="coverImage">
                 <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg"
                     data-testid="input-cover-image" />
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-cover-image" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <div class="cover">
