@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 import { fetchGenres } from '@/services/requests'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { useToast } from '@/composables/useToast'
+import { useConfirmDialog } from '@/composables/useConfirmDialog'
+
+const confirm = useConfirmDialog()
+const ElMessage = useToast()
 
 export const useGenreStore = defineStore('genre', {
     state: () => ({
@@ -18,18 +22,17 @@ export const useGenreStore = defineStore('genre', {
                 this.genres = await fetchGenres()
                 this.isLoaded = true
             } catch (err) {
-                try {
-                    await ElMessageBox.confirm(
-                        'Failed to load genres. Try again',
-                        'Loading fail',
-                        {
-                            confirmButtonText: 'Try again',
-                            cancelButtonText: 'Cancel',
-                            type: 'error'
-                        }
-                    )
+                const ok = await confirm(
+                    'Failed to load genres. Try again',
+                    'Loading fail',
+                    {
+                        confirmButtonText: 'Try again',
+                        cancelButtonText: 'Cancel'
+                    }
+                )
+                if (ok) {
                     await this.loadGenres()
-                } catch {
+                } else {
                     ElMessage.info('Genres loading canceled')
                 }
             } finally {

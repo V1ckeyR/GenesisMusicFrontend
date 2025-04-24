@@ -3,12 +3,9 @@ import { reactive, computed, ref, watch, nextTick, onMounted } from 'vue'
 import type { FormInstance, FormRules } from 'element-plus'
 import type { Track, TrackFormPayload } from '@/types/Track'
 import { useGenreStore } from '@/stores/genreStore'
+import Loader from '@/components/Loader.vue'
 
 const genreStore = useGenreStore()
-
-onMounted(() => {
-  genreStore.loadGenres()
-})
 
 const availableGenres = computed(() => genreStore.genres);
 const isLoading = computed(() => genreStore.isLoading);
@@ -75,7 +72,7 @@ function onClose() {
 
 function onDelete() {
     emit("delete", props.track!);
-    resetForm();    
+    resetForm();
 }
 
 function submitForm() {
@@ -126,29 +123,48 @@ const rules: FormRules = {
 }
 </script>
 <template>
-    <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose">
-        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px" v-loading="isLoading">
+    <el-dialog v-model="visible" :title="dialogTitle" width="500px" :close-on-click-modal="true" @close="onClose"
+        data-testid="track-form">
+        <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
             <el-form-item label="Title" prop="title">
-                <el-input v-model.trim="form.title" autocomplete="off" />
+                <el-input v-model.trim="form.title" autocomplete="off" data-testid="input-title" />
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-title" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <el-form-item label="Artist" prop="artist">
-                <el-input v-model.trim="form.artist" autocomplete="off" />
+                <el-input v-model.trim="form.artist" autocomplete="off" data-testid="input-artist" />
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-artist" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <el-form-item label="Album" prop="album">
-                <el-input v-model.trim="form.album" autocomplete="off" />
+                <el-input v-model.trim="form.album" autocomplete="off" data-testid="input-album" />
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-album" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <el-form-item label="Genres" prop="genres">
+                <Loader :visible="isLoading" />
                 <el-select v-model="form.genres" multiple filterable allow-create default-first-option
-                    placeholder="Select or type genres" style="width: 100%">
-                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre" />
+                    placeholder="Select or type genres" style="width: 100%" data-testid="genre-selector">
+                    <el-option v-for="genre in availableGenres" :key="genre" :label="genre" :value="genre"
+                        :disabled="isLoading" />
                 </el-select>
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-genre" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <el-form-item label="Cover Image" prop="coverImage">
-                <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg" />
+                <el-input v-model="form.coverImage" placeholder="https://example.com/cover.jpg"
+                    data-testid="input-cover-image" />
+                <template #error="{ error }">
+                    <div v-if="error" data-testid="error-cover-image" class="el-form-item__error">{{ error }}</div>
+                </template>
             </el-form-item>
 
             <div class="cover">
@@ -163,7 +179,7 @@ const rules: FormRules = {
             <el-button v-if="props.track?.id" type="danger" @click="onDelete">Delete</el-button>
             <el-button @click="onClose">Cancel</el-button>
             <el-button @click="resetForm">Reset</el-button>
-            <el-button type="primary" @click="submitForm">Save</el-button>
+            <el-button type="primary" @click="submitForm" data-testid="submit-button">Save</el-button>
         </template>
     </el-dialog>
 </template>

@@ -4,6 +4,10 @@ import type { Track, TrackBulkDeleteResponse, TrackFormPayload, TrackListRespons
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
 
+export function getTrackAudioUrl(audioFile: string): string {
+    return `${API_BASE_URL}/api/files/${audioFile}`
+}
+
 const api = axios.create({
     baseURL: `${API_BASE_URL}/api`,
     timeout: 5000,
