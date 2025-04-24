@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElMessage } from 'element-plus'
 import type { Track } from '@/types/Track'
 import { useTrackStore } from '@/stores/trackStore';
+import { useToast } from '@/composables/useToast';
 
 const trackStore = useTrackStore();
+const ElMessage = useToast();
 
 const visible = defineModel<boolean>('visible');
 

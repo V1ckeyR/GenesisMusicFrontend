@@ -150,8 +150,7 @@ function onCloseUploadDialog() {
                     class="search-input" data-testid="search-input" :disabled="isLoading" :aria-disabled="isLoading" />
 
                 <div class="tracks-page" :data-loading="isLoading" data-testid="loading-tracks">
-                    <CardSkeleton v-if="isLoading" v-for="n in limit"
-                        :key="'skeleton-' + n" :number="n" />
+                    <CardSkeleton v-if="isLoading" v-for="n in limit" :key="'skeleton-' + n" :number="n" />
 
                     <Card v-else v-for="(track, index) in tracks" :key="track.id" :track="track"
                         :number="(page - 1) * limit + index + 1" @edit="onEditTrack" @delete="onDeleteTrack"

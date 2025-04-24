@@ -1,9 +1,12 @@
 // trackStore.ts
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
+import { ref, computed, } from 'vue'
 import { fetchTracks, createTrack, updateTrack, deleteTrack, deleteTrackAudiofile, uploadTrackAudiofile } from '@/services/requests'
-import { ElMessage, ElMessageBox } from 'element-plus'
 import type { Track, TrackFormPayload } from '@/types/Track'
+import { useToast } from '@/composables/useToast'
+import { ElMessageBox } from 'element-plus'
+
+const ElMessage = useToast()
 
 export const useTrackStore = defineStore('track', () => {
     const tracks = ref<Track[]>([])

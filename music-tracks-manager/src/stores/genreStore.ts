@@ -1,6 +1,10 @@
 import { defineStore } from 'pinia'
 import { fetchGenres } from '@/services/requests'
-import { ElMessageBox, ElMessage } from 'element-plus'
+import { useToast } from '@/composables/useToast'
+import { ElMessageBox } from 'element-plus'
+
+const ElMessage = useToast()
+
 
 export const useGenreStore = defineStore('genre', {
     state: () => ({
